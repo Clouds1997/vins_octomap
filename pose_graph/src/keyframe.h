@@ -82,6 +82,8 @@ public:
 	Eigen::Matrix3d vio_R_w_i; 
 	Eigen::Vector3d T_w_i;
 	Eigen::Matrix3d R_w_i;
+	Eigen::Vector3d P;
+	Eigen::Matrix3d R;
 	Eigen::Vector3d origin_vio_T;		
 	Eigen::Matrix3d origin_vio_R;
 	cv::Mat image;

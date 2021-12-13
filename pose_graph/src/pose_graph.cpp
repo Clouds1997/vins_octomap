@@ -17,6 +17,7 @@ PoseGraph::PoseGraph()
     sequence_loop.push_back(0);
     base_sequence = 1;
 
+
 }
 
 PoseGraph::~PoseGraph()
@@ -30,6 +31,14 @@ void PoseGraph::registerPub(ros::NodeHandle &n)
     pub_base_path = n.advertise<nav_msgs::Path>("base_path", 1000);
     pub_pose_graph = n.advertise<visualization_msgs::MarkerArray>("pose_graph", 1000);
     pub_octree = n.advertise<sensor_msgs::PointCloud2>("octree", 1000);
+    // ros puber
+    ros_puber_ = new dre_slam::RosPuber ( n );
+    
+    // octomap_fusion_  这个是进行全局地图的拼接工作
+	octomap_fusion_ = new dre_slam::OctoMapFusion( ros_puber_);
+    // sub octomap  这里是创建相应的子图
+	sub_octomap_construction_ = new dre_slam::SubOctoMapConstruction(octomap_fusion_);
+
     for (int i = 1; i < 10; i++)
         pub_path[i] = n.advertise<nav_msgs::Path>("path_" + to_string(i), 1000);
 }
@@ -157,6 +166,7 @@ void PoseGraph::addKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop)
     sensor_msgs::PointCloud2 tmp_pcl;
     m_octree.lock();
 
+    // 标记一下，这里是发布和处理点云的地方
     int pcl_count_temp = 0;
     for (unsigned int i = 0; i < cur_kf->point_3d_depth.size(); i++)
     {
@@ -167,6 +177,7 @@ void PoseGraph::addKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop)
         searchPoint.x = w_pts_i(0);
         searchPoint.y = w_pts_i(1);
         searchPoint.z = w_pts_i(2);
+        // getVoxelDensityAtPoint 返回体素的叶子节点的密度
         if (octree->getVoxelDensityAtPoint(searchPoint) < 5)
         {
             cur_kf->point_3d_depth[pcl_count_temp] = pcl;
@@ -243,7 +254,7 @@ void PoseGraph::addKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop)
     // add frame to key frame list
 	keyframelist.push_back(cur_kf);
     publish();
-    pub_octree.publish(tmp_pcl);
+    // pub_octree.publish(tmp_pcl);
 	m_keyframelist.unlock();
 
 }

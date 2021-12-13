@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <ros/ros.h>
 #include "keyframe.h"
+
 #include "utility/tic_toc.h"
 #include "utility/utility.h"
 #include "utility/CameraPoseVisualization.h"
@@ -31,6 +32,10 @@
 #include <pcl/octree/octree.h>
 #include <pcl/octree/octree_impl.h>
 #include <pcl/io/pcd_io.h>
+
+#include "ros_puber.h"
+#include "sub_octomap_construction.h"
+#include "octomap_fusion.h"
 
 #define SHOW_S_EDGE false
 #define SHOW_L_EDGE false
@@ -99,6 +104,11 @@ private:
 	ros::Publisher pub_pose_graph;
 	ros::Publisher pub_path[10];
 	ros::Publisher pub_octree;
+
+
+	dre_slam::SubOctoMapConstruction* sub_octomap_construction_;
+	dre_slam::OctoMapFusion* octomap_fusion_;
+	dre_slam::RosPuber* ros_puber_;
 };
 
 template <typename T>

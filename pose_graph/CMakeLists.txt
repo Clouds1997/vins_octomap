@@ -20,13 +20,21 @@ find_package(catkin REQUIRED COMPONENTS
 
 find_package(OpenCV)
 
-
+find_package(PCL REQUIRED)
 find_package(Ceres REQUIRED)
+find_package(octomap REQUIRED)
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 find_package(Eigen3)
 
-include_directories(${catkin_INCLUDE_DIRS} ${CERES_INCLUDE_DIRS}  ${EIGEN3_INCLUDE_DIR} )
+include_directories(
+    ${catkin_INCLUDE_DIRS} 
+    ${CERES_INCLUDE_DIRS}  
+    ${EIGEN3_INCLUDE_DIR}
+    ${OCTOMAP_INCLUDE_DIRS}
+    ${PCL_INCLUDE_DIRS}
+    ${OpenCV_INCLUDE_DIRS}
+     )
 
 catkin_package()
 
@@ -34,6 +42,10 @@ add_executable(pose_graph
     src/pose_graph_node.cpp
     src/pose_graph.cpp
     src/keyframe.cpp
+    src/sub_octomap_construction.cpp
+    src/ros_puber.cpp
+    src/octomap_fusion.cpp
+    # src/sub_octomap.cpp
     src/utility/CameraPoseVisualization.cpp
     src/ThirdParty/DBoW/BowVector.cpp
     src/ThirdParty/DBoW/FBrief.cpp
@@ -46,5 +58,12 @@ add_executable(pose_graph
     src/ThirdParty/VocabularyBinary.cpp
     )
 
-target_link_libraries(pose_graph ${catkin_LIBRARIES}  ${OpenCV_LIBS} ${CERES_LIBRARIES})
+target_link_libraries(pose_graph 
+    ${catkin_LIBRARIES}  
+    ${OpenCV_LIBS} 
+    ${CERES_LIBRARIES}
+    ${OCTOMAP_LIBRARIES}
+    ${OpenCV_LIBS}
+    ${PCL_LIBRARIES}
+    )
 message("catkin_lib  ${catkin_LIBRARIES}")

@@ -33,9 +33,11 @@ SubOctoMapConstruction::SubOctoMapConstruction ( OctoMapFusion* octomap_fusion) 
 
 void SubOctoMapConstruction::processing()
 {
+    std::cout << "SubOctoMapConstruction is ok !!!!" << std::endl;
     while ( true ) {
         // 这里就是将关键帧序列给全部弹完为止
         if ( checkNewFrame() == true ) {
+            std::cout << "map is constructing !!!!" << std::endl;
             // 从关键帧序列中弹出一个位于栈顶的关键帧
             KeyFrame* kf = getNewKeyFrame();
 
@@ -75,6 +77,7 @@ void SubOctoMapConstruction::processing()
 // 关键帧从这里插入
 void SubOctoMapConstruction::insertKeyFrame ( KeyFrame* kf )
 {
+    std::cout << "insertKeyFrame !!!!!!!"<<std::endl; 
     std::unique_lock<mutex> lock ( mutex_kfs_queue_ );
     kfs_queue_.push ( kf );
 }

@@ -21,6 +21,7 @@ namespace dre_slam
 {
 OctoMapFusion::OctoMapFusion (RosPuber* ros_puber) : ros_puber_(ros_puber)
 {
+    std::cout << "OctoMapFusion is ok!" << std::endl;
     //首先先创建一个新的进程进行地图拼接的工作
     // th_octomap_fusion_ = new std::thread ( &OctoMapFusion::processing, this );
     full_map_ = new octomap::OcTree ( 0.1 );

@@ -165,8 +165,11 @@ void PoseGraph::addKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop)
 
     sensor_msgs::PointCloud2 tmp_pcl;
     m_octree.lock();
-
+    cur_kf->P = P;
+    cur_kf->R = R;
     // 标记一下，这里是发布和处理点云的地方
+    sub_octomap_construction_->insertKeyFrame(cur_kf);
+
     int pcl_count_temp = 0;
     for (unsigned int i = 0; i < cur_kf->point_3d_depth.size(); i++)
     {

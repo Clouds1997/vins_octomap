@@ -25,7 +25,7 @@ PoseGraph::~PoseGraph()
 	t_optimization.join();
 }
 
-void PoseGraph::registerPub(ros::NodeHandle &n)
+void PoseGraph::registerPub(ros::NodeHandle &n, dre_slam::Config* cfg)
 {
     pub_pg_path = n.advertise<nav_msgs::Path>("pose_graph_path", 1000);
     pub_base_path = n.advertise<nav_msgs::Path>("base_path", 1000);
@@ -37,7 +37,7 @@ void PoseGraph::registerPub(ros::NodeHandle &n)
     // octomap_fusion_  这个是进行全局地图的拼接工作
 	octomap_fusion_ = new dre_slam::OctoMapFusion( ros_puber_);
     // sub octomap  这里是创建相应的子图
-	sub_octomap_construction_ = new dre_slam::SubOctoMapConstruction(octomap_fusion_);
+	sub_octomap_construction_ = new dre_slam::SubOctoMapConstruction(octomap_fusion_, cfg);
 
     for (int i = 1; i < 10; i++)
         pub_path[i] = n.advertise<nav_msgs::Path>("path_" + to_string(i), 1000);

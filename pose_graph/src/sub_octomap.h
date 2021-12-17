@@ -14,32 +14,35 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef ROS_PUBER_H
-#define ROS_PUBER_H
+#ifndef SUB_OCTOMAP_H
+#define SUB_OCTOMAP_H
 
-#include <ros/ros.h>
-#include <octomap_msgs/Octomap.h>
 #include <octomap/octomap.h>
-#include <octomap_msgs/conversions.h>
+#include <sophus/se3.h>
+#include "keyframe.h"
+#include "config.h"
 
 namespace dre_slam{
-class RosPuber{
+	
+class SubOctomap{
 public:
-	RosPuber( ros::NodeHandle& nh );
-	void pubOctoMap( octomap::OcTree* octree );
-	void pubsubMap( octomap::OcTree* octree );
+	SubOctomap( Config* cfg);
+	void insertKeyFrame( KeyFrame* kf, octomap::Pointcloud& point_cloud_c );
+	bool isContainKeyframe(KeyFrame* kf);
 	
-private:
-	ros::NodeHandle nh_;
-
-	// OctoMap.
-	ros::Publisher puber_octomap_;
-	ros::Publisher puber_submap_;
-}; // RosPuber
-}
- 
-
+	~SubOctomap()
+	{
+		delete sub_octree_;
+	}
 	
+	// main contant.
+	Config* cfg_;
+	octomap::OcTree* sub_octree_;
+	std::set<KeyFrame*> kfs_;
+	KeyFrame* kf_base_;
+};// class SubOctomap
+	
+} //namespace dre_slam
 
 
 #endif

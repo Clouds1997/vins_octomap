@@ -27,6 +27,7 @@
 #include "pose_graph.h"
 #include "utility/CameraPoseVisualization.h"
 #include "parameters.h"
+#include "config.h"
 #define SKIP_FIRST_CNT 10
 using namespace std;
 
@@ -533,7 +534,14 @@ int main(int argc, char **argv)
 {
     ros::init(argc, argv, "pose_graph");
     ros::NodeHandle n("~");
-    posegraph.registerPub(n);
+    std::string octomap_cfg_dir;
+    if ( ! n.getParam ( "octomap_cfg_dir", octomap_cfg_dir ) ) {
+		std::cout << "Read octomap_cfg_dir failure !\n";
+        return -1;
+    }
+	// Load system configure.
+	dre_slam::Config* cfg = new dre_slam::Config( octomap_cfg_dir );
+    posegraph.registerPub(n, cfg);
 
     // read param
     n.getParam("visualization_shift_x", VISUALIZATION_SHIFT_X);

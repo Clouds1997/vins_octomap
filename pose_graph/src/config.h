@@ -18,7 +18,6 @@
 #define CONFIG_H
 
 #include <opencv2/opencv.hpp>
-#include <sophus/se3.h>
 
 namespace dre_slam{
 	
@@ -54,7 +53,7 @@ public:
 	double odom_kr_; 	// right wheel factor
 	double odom_b_; 	// wheel space
 	double odom_K_; 	// Noise factor.
-	Sophus::SE3 Trc_; 	// Extrinsic parameter. Translation from the camera to the robot.
+	// Sophus::SE3 Trc_; 	// Extrinsic parameter. Translation from the camera to the robot.
 
 
 	/**** RGB-D Encoder Tracking ****/

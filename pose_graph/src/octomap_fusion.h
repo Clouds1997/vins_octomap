@@ -23,6 +23,7 @@
 #include <eigen3/Eigen/Dense>
 #include "ros_puber.h"
 #include "keyframe.h"
+#include "sub_octomap.h"
 
 namespace dre_slam {
 class SubOctoMapConstruction;
@@ -30,6 +31,7 @@ class SubOctoMapConstruction;
 class OctoMapFusion{
 public:
 	OctoMapFusion(RosPuber *ros_puber);
+	void insertSubMap( SubOctomap* submap );
 	void insertOneScan2FullMapAndPub ( KeyFrame* kf, octomap::Pointcloud& point_cloud_c);
 	void fusionAndPub();  
 	void processing();
@@ -41,6 +43,7 @@ private:
 
 	RosPuber* ros_puber_;	
 	octomap::OcTree* full_map_;
+	std::list<SubOctomap*> submaps_;
 	
 	std::thread* th_octomap_fusion_;
 	std::mutex mutex_submaps_;

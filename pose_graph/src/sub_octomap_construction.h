@@ -20,7 +20,8 @@
 #include "keyframe.h"
 #include "config.h"
 #include <octomap/octomap.h>
-// #include "sub_octomap.h"
+#include "config.h"
+#include "sub_octomap.h"
 #include "octomap_fusion.h"
 #include <eigen3/Eigen/Dense>
 
@@ -31,8 +32,7 @@ class OctoMapFusion;
 
 class SubOctoMapConstruction{
 public:
-	SubOctoMapConstruction( OctoMapFusion* octomap_fusion);
-	
+	SubOctoMapConstruction( OctoMapFusion* octomap_fusion, Config* cfg);
 	// insert new frame to
 	void insertKeyFrame(KeyFrame* kf);
 	void processing();
@@ -46,6 +46,7 @@ public:
 	void insertAllData2OctoMapFusion();
 private:
 	OctoMapFusion* octomap_fusion_;
+	Config* cfg_;
 	
 	// Thread.
 	std::thread* sub_octomap_construction_thread_;
@@ -53,7 +54,7 @@ private:
 	std::mutex mutex_kfs_queue_;
 	
 	// current sub map.
-	// SubOctomap* cur_sub_map_; 
+	SubOctomap* cur_sub_map_; 
 	int nkf_passed_;
 	
 	// requestAllData

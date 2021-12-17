@@ -36,6 +36,7 @@
 #include "ros_puber.h"
 #include "sub_octomap_construction.h"
 #include "octomap_fusion.h"
+#include "config.h"
 
 #define SHOW_S_EDGE false
 #define SHOW_L_EDGE false
@@ -49,7 +50,7 @@ class PoseGraph
 public:
 	PoseGraph();
 	~PoseGraph();
-	void registerPub(ros::NodeHandle &n);
+	void registerPub(ros::NodeHandle &n, dre_slam::Config *cfg);
 	void addKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop);
 	void loadKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop);
 	void loadVocabulary(std::string voc_path);
@@ -80,6 +81,7 @@ private:
 	void addKeyFrameIntoVoc(KeyFrame* keyframe);
 	void optimize4DoF();
 	void updatePath();
+	dre_slam::Config* cfg_;
 	list<KeyFrame*> keyframelist;
 	std::mutex m_keyframelist;
 	std::mutex m_optimize_buf;

@@ -24,7 +24,7 @@ namespace dre_slam
 {
 
 // 这个节点是创建子图的节点
-SubOctoMapConstruction::SubOctoMapConstruction ( OctoMapFusion* octomap_fusion) : octomap_fusion_ ( octomap_fusion )
+SubOctoMapConstruction::SubOctoMapConstruction ( OctoMapFusion* octomap_fusion,  Config* cfg ) : octomap_fusion_ ( octomap_fusion ), cfg_ ( cfg )
 {
     sub_octomap_construction_thread_ = new std::thread ( &SubOctoMapConstruction::processing, this );
     nkf_passed_ = 0;
@@ -44,9 +44,9 @@ void SubOctoMapConstruction::processing()
 			/*std::unique_lock<mutex> lock ( mutex_all_data_ );*/ 
 			
             // construct sub map.
-            // if ( nkf_passed_ == 0 ) {
-            //     cur_sub_map_ = new SubOctomap ( cfg_ );
-            // }
+            if ( nkf_passed_ == 0 ) {
+                cur_sub_map_ = new SubOctomap ( cfg_ );
+            }
 
             // Construct 3D point cloud in the camera frame.
             octomap::Pointcloud point_cloud_c;
@@ -57,17 +57,17 @@ void SubOctoMapConstruction::processing()
 			octomap_fusion_->insertOneScan2FullMapAndPub ( kf, point_cloud_c);
              
 			// // Insert one scan to cur sub map.  就是将这一帧的点云转到base（第一帧点云）之下 就是差不多创建一个局部的小地图 
-            // cur_sub_map_->insertKeyFrame ( kf, point_cloud_c );
+            cur_sub_map_->insertKeyFrame ( kf, point_cloud_c );
 
-            // // Check if need to construct new submap.  如果当前子图的关键帧数量已经达到阈值，则创建新的子图
-            // nkf_passed_ ++;
-            // if ( nkf_passed_ > cfg_->oc_submap_size_ ) {
-            //     nkf_passed_ = 0;
-            //     SubOctomap* new_sub_map = cur_sub_map_;
+            // Check if need to construct new submap.  如果当前子图的关键帧数量已经达到阈值，则创建新的子图
+            ++ nkf_passed_;
+            if ( nkf_passed_ > cfg_->oc_submap_size_ ) {
+                nkf_passed_ = 0;
+                SubOctomap* new_sub_map = cur_sub_map_;
 				
-			// 	// insert one submap to fullmap.
-			// 	octomap_fusion_->insertSubMap ( new_sub_map );
-            // } // if have to insert submap.
+				// insert one submap to fullmap.
+				octomap_fusion_->insertSubMap ( new_sub_map );
+            } // if have to insert submap.
 
         } // if have new keyframe.
         usleep ( 5000 );

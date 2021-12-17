@@ -33,6 +33,15 @@ OctoMapFusion::OctoMapFusion (RosPuber* ros_puber) : ros_puber_(ros_puber)
     clamping_min_ = full_map_->getClampingThresMinLog();
 } // OctomapMerging
 
+// 这个一看就是插入一个子图
+void OctoMapFusion::insertSubMap ( SubOctomap* submap )
+{
+    std::cout << "pub a new submap" << std::endl;
+    // publish OctoMap.
+	ros_puber_->pubsubMap(submap->sub_octree_);
+    std::unique_lock<mutex> lock ( mutex_submaps_ );
+    submaps_.push_back ( submap );
+} // insertSubMap
 
 void OctoMapFusion::insertOneScan2FullMapAndPub ( KeyFrame* kf, octomap::Pointcloud& point_cloud_c)
 {

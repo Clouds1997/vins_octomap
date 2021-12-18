@@ -30,7 +30,7 @@ SubOctomap::SubOctomap ( Config* cfg) :cfg_ ( cfg )
 
 void SubOctomap::insertKeyFrame ( KeyFrame* kf, octomap::Pointcloud& point_cloud_c )
 {
-    std::cout << "insertKeyFrame in sub_octomap !!!!!!" << std::endl;
+    // std::cout << "insertKeyFrame in sub_octomap !!!!!!" << std::endl;
     if ( kfs_.size() == 0 ) {
         kf_base_ = kf;
         

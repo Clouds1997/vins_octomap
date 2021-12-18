@@ -21,6 +21,8 @@
 #include <thread>
 #include <mutex>
 #include <eigen3/Eigen/Dense>
+#include <sophus/se3.h>
+#include "config.h"
 #include "ros_puber.h"
 #include "keyframe.h"
 #include "sub_octomap.h"
@@ -30,18 +32,21 @@ class SubOctoMapConstruction;
 
 class OctoMapFusion{
 public:
-	OctoMapFusion(RosPuber *ros_puber);
+	OctoMapFusion(RosPuber *ros_puber, Config* cfg);
 	void insertSubMap( SubOctomap* submap );
 	void insertOneScan2FullMapAndPub ( KeyFrame* kf, octomap::Pointcloud& point_cloud_c);
 	void fusionAndPub();  
+	void insertSubMap2NewTree(SubOctomap* submap, octomap::OcTree* new_tree);
 	void processing();
 	void setLoopFlag();
 	bool getLoopFlag();
 	void saveOctoMap( const std::string& dir );
 	
 private: 
+	void transformTree(octomap::OcTree* src_tree, Sophus::SE3& Twc, octomap::OcTree* dst_tree);
 
 	RosPuber* ros_puber_;	
+	Config* cfg_;
 	octomap::OcTree* full_map_;
 	std::list<SubOctomap*> submaps_;
 	

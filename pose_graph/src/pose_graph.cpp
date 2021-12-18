@@ -35,7 +35,7 @@ void PoseGraph::registerPub(ros::NodeHandle &n, dre_slam::Config* cfg)
     ros_puber_ = new dre_slam::RosPuber ( n );
     
     // octomap_fusion_  这个是进行全局地图的拼接工作
-	octomap_fusion_ = new dre_slam::OctoMapFusion( ros_puber_);
+	octomap_fusion_ = new dre_slam::OctoMapFusion( ros_puber_, cfg);
     // sub octomap  这里是创建相应的子图
 	sub_octomap_construction_ = new dre_slam::SubOctoMapConstruction(octomap_fusion_, cfg);
 
@@ -86,6 +86,7 @@ void PoseGraph::addKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop)
     {
         addKeyFrameIntoVoc(cur_kf);
     }
+    // 这里如果不等于-1就证明发生了回环操作
 	if (loop_index != -1)
 	{
         //printf(" %d detect loop with %d \n", cur_kf->index, loop_index);
@@ -141,6 +142,7 @@ void PoseGraph::addKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop)
             m_optimize_buf.unlock();
         }
 	}
+    
 	m_keyframelist.lock();
     Vector3d P;
     Matrix3d R;
@@ -251,6 +253,10 @@ void PoseGraph::addKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop)
             }
 
         }
+    }
+    // 当前关键帧如果发生了回环，就执行回环地图的操作
+    if(cur_kf->has_loop){
+        octomap_fusion_->setLoopFlag();
     }
     //posegraph_visualization->add_pose(P + Vector3d(VISUALIZATION_SHIFT_X, VISUALIZATION_SHIFT_Y, 0), Q);
     tmp_pcl.header = pose_stamped.header;

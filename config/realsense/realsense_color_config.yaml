@@ -8,7 +8,7 @@ depth_topic: "/camera/aligned_depth_to_color/image_raw"
 output_path: "/home/shanzy/output/"
 
 #pointcloud settings
-pcl_dist: 10
+pcl_dist: 4
 u_boundary: 10
 d_boundary: 10
 l_boundary: 40

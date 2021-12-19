@@ -166,35 +166,35 @@ void PoseGraph::addKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop)
     path[sequence_cnt].header = pose_stamped.header;
 
     sensor_msgs::PointCloud2 tmp_pcl;
-    m_octree.lock();
+    // m_octree.lock();
     cur_kf->P = P;
     cur_kf->R = R;
     // 标记一下，这里是发布和处理点云的地方
     sub_octomap_construction_->insertKeyFrame(cur_kf);
 
-    int pcl_count_temp = 0;
-    for (unsigned int i = 0; i < cur_kf->point_3d_depth.size(); i++)
-    {
-        cv::Point3f pcl = cur_kf->point_3d_depth[i];
-        Vector3d pts_i(pcl.x , pcl.y, pcl.z);
-        Vector3d w_pts_i = R * (qi_d * pts_i + ti_d) + P;
-        pcl::PointXYZ searchPoint;
-        searchPoint.x = w_pts_i(0);
-        searchPoint.y = w_pts_i(1);
-        searchPoint.z = w_pts_i(2);
-        // getVoxelDensityAtPoint 返回体素的叶子节点的密度
-        if (octree->getVoxelDensityAtPoint(searchPoint) < 5)
-        {
-            cur_kf->point_3d_depth[pcl_count_temp] = pcl;
-            octree->addPointToCloud(searchPoint, cloud);
-            // Uncomment this to get pointcloud
-            //save_cloud->points.push_back(searchPoint);
-            ++pcl_count_temp;
-        }
-    }
-    cur_kf->point_3d_depth.resize(pcl_count_temp);
-    pcl::toROSMsg(*(octree->getInputCloud()), tmp_pcl);
-    m_octree.unlock();
+    // int pcl_count_temp = 0;
+    // for (unsigned int i = 0; i < cur_kf->point_3d_depth.size(); i++)
+    // {
+    //     cv::Point3f pcl = cur_kf->point_3d_depth[i];
+    //     Vector3d pts_i(pcl.x , pcl.y, pcl.z);
+    //     Vector3d w_pts_i = R * (qi_d * pts_i + ti_d) + P;
+    //     pcl::PointXYZ searchPoint;
+    //     searchPoint.x = w_pts_i(0);
+    //     searchPoint.y = w_pts_i(1);
+    //     searchPoint.z = w_pts_i(2);
+    //     // getVoxelDensityAtPoint 返回体素的叶子节点的密度
+    //     if (octree->getVoxelDensityAtPoint(searchPoint) < 5)
+    //     {
+    //         cur_kf->point_3d_depth[pcl_count_temp] = pcl;
+    //         octree->addPointToCloud(searchPoint, cloud);
+    //         // Uncomment this to get pointcloud
+    //         //save_cloud->points.push_back(searchPoint);
+    //         ++pcl_count_temp;
+    //     }
+    // }
+    // cur_kf->point_3d_depth.resize(pcl_count_temp);
+    // pcl::toROSMsg(*(octree->getInputCloud()), tmp_pcl);
+    // m_octree.unlock();
 
 
     // not used

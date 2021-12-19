@@ -47,7 +47,7 @@ RosPuber::RosPuber ( ros::NodeHandle& nh )
     // puber_visual_graph_ = nh.advertise<visualization_msgs::Marker> ( "dre_slam/visual_graph", 1, true );
 
     // OctoMap
-    std::cout << "rospub is ok !!!!"<<std::endl;
+    // std::cout << "rospub is ok !!!!"<<std::endl;
     puber_octomap_ = nh.advertise<octomap_msgs::Octomap> ( "vins_rbgd/octomap", 1, true );
     puber_submap_ = nh.advertise<octomap_msgs::Octomap> ( "vins_rbgd/submap", 1, true );
 } // RosPuber

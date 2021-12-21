@@ -256,7 +256,7 @@ void PoseGraph::addKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop)
     }
     // 当前关键帧如果发生了回环，就执行回环地图的操作
     if(cur_kf->has_loop){
-        octomap_fusion_->setLoopFlag();
+        // octomap_fusion_->setLoopFlag();
     }
     //posegraph_visualization->add_pose(P + Vector3d(VISUALIZATION_SHIFT_X, VISUALIZATION_SHIFT_Y, 0), Q);
     tmp_pcl.header = pose_stamped.header;

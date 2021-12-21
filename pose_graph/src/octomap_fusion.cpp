@@ -45,6 +45,7 @@ void OctoMapFusion::insertSubMap ( SubOctomap* submap )
 
 void OctoMapFusion::insertOneScan2FullMapAndPub ( KeyFrame* kf, octomap::Pointcloud& point_cloud_c)
 {
+    // full_map_ = point_cloud_c;
     Eigen::Vector3d P = kf->P;
     Eigen::Matrix3d R = kf->R;
     // Convert point cloud to world coordinate.
@@ -68,6 +69,7 @@ void OctoMapFusion::insertOneScan2FullMapAndPub ( KeyFrame* kf, octomap::Pointcl
 	
 	// publish OctoMap.
 	ros_puber_->pubOctoMap(full_map_);
+    // delete full_map_;
 } // insertOneScan2FullMap
 
 void OctoMapFusion::fusionAndPub()
@@ -180,11 +182,11 @@ void OctoMapFusion::setLoopFlag ()
     loop_flag_ = true;
 }
 
-void OctoMapFusion::saveOctoMap ( const string& dir )
-{
-	std::unique_lock<mutex> lock_full ( mutex_full_map_ );
-	full_map_->writeBinary( dir );
-} // saveOctoMap
+// void OctoMapFusion::saveOctoMap ( const string& dir )
+// {
+// 	std::unique_lock<mutex> lock_full ( mutex_full_map_ );
+// 	full_map_->writeBinary( dir );
+// } // saveOctoMap
 
 }
 

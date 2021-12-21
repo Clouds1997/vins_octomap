@@ -1,0 +1,22 @@
+<launch>
+  <!-- USB Cam Node -->
+  <!-- <node name="usb_cam" pkg="usb_cam" type="usb_cam_node" output="screen" >
+    <rosparam file="$(find jetbot_perception)/config/usb_cam.yaml" command="load" />
+  </node> -->
+
+  <!-- OpenCV Object Detection Node -->
+  <node name="yolov4_ros" pkg="yolov4_ros" type="yolo_node.py" output="screen"> 
+    <param name="input_image_topic" value="/d400/color/image_raw"/>
+    <!-- <param name="enable_floating_window" value="true"/>
+    <param name="enable_rate_info" value="true"/> -->
+    <param name="model_file" value="$(find yolov4_ros)/models_old/yolov4.cfg"/>
+    <param name="prototxt_file" value="$(find yolov4_ros)/models_old/yolov4.weights"/>
+    <param name="namesfile" value="$(find yolov4_ros)/models/coco.names"/>
+    <param name="use_cuda" value="true"/>
+
+    <!-- Do remapping if needed -->
+    <!--remap from="/usb_cam/image_raw" to="/jetbot_camera/image_raw"/-->
+    <!--remap from="/detected_objects" to="/jetbot_objects/"/-->
+    <!--remap from="/detected_objects_info" to="/jetbot_objects_info"/-->    
+  </node>
+</launch>

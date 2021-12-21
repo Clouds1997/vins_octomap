@@ -4,6 +4,16 @@
     <arg name="octomap_config_path" default = "$(find feature_tracker)/../config/realsense/octomap_config.yaml" />  
     <arg name="vins_path" default = "$(find feature_tracker)/../config/../" />
     
+    <node name="yolov4_ros" pkg="yolov4_ros" type="yolo_node.py" output="screen"> 
+        <param name="input_image_topic" value="/d400/color/image_raw"/>
+        <!-- <param name="enable_floating_window" value="true"/>
+        <param name="enable_rate_info" value="true"/> -->
+        <param name="model_file" value="$(find yolov4_ros)/models_old/yolov4.cfg"/>
+        <param name="prototxt_file" value="$(find yolov4_ros)/models_old/yolov4.weights"/>
+        <param name="namesfile" value="$(find yolov4_ros)/models/coco.names"/>
+        <param name="use_cuda" value="true"/>
+    </node>
+
     <node name="feature_tracker" pkg="feature_tracker" type="feature_tracker" output="screen">
         <param name="config_file" type="string" value="$(arg config_path)" />
         <param name="depth_config_file" type="string" value="$(arg depth_config_path)" />

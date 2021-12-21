@@ -49,6 +49,11 @@ void PoseGraph::loadVocabulary(std::string voc_path)
     db.setVocabulary(*voc, false, 0);
 }
 
+void PoseGraph::loadNetVlad()
+{
+    netvlad = new NetVLAD();
+}
+
 void PoseGraph::addKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop)
 {
     //shift to base frame
@@ -81,6 +86,7 @@ void PoseGraph::addKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop)
         TicToc tmp_t;
         // get loop_index here
         loop_index = detectLoop(cur_kf, cur_kf->index);
+        // loop_index = detectLoopNetVlad(cur_kf, cur_kf->index);
     }
     else
     {
@@ -166,7 +172,7 @@ void PoseGraph::addKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop)
     path[sequence_cnt].header = pose_stamped.header;
 
     sensor_msgs::PointCloud2 tmp_pcl;
-    // m_octree.lock();
+    m_octree.lock();
     cur_kf->P = P;
     cur_kf->R = R;
     // 标记一下，这里是发布和处理点云的地方
@@ -194,7 +200,7 @@ void PoseGraph::addKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop)
     // }
     // cur_kf->point_3d_depth.resize(pcl_count_temp);
     // pcl::toROSMsg(*(octree->getInputCloud()), tmp_pcl);
-    // m_octree.unlock();
+    m_octree.unlock();
 
 
     // not used
@@ -256,7 +262,7 @@ void PoseGraph::addKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop)
     }
     // 当前关键帧如果发生了回环，就执行回环地图的操作
     if(cur_kf->has_loop){
-        // octomap_fusion_->setLoopFlag();
+        octomap_fusion_->setLoopFlag();
     }
     //posegraph_visualization->add_pose(P + Vector3d(VISUALIZATION_SHIFT_X, VISUALIZATION_SHIFT_Y, 0), Q);
     tmp_pcl.header = pose_stamped.header;
@@ -448,6 +454,22 @@ int PoseGraph::detectLoop(KeyFrame* keyframe, int frame_index)
     }
     else
         return -1;
+
+}
+
+int PoseGraph::detectLoopNetVlad(KeyFrame* keyframe, int frame_index)
+{
+   QueryResults ret;
+   netvlad->query(keyframe->global_desc->global_descriptor,ret,4,frame_index - 50);
+   netvlad->add(keyframe->global_desc->global_descriptor,frame_index); 
+    if (ret.size() > 0 && frame_index > 50 && ret[0].Score > 0.5 )
+    {
+        printf(" ***loop_index*** %d \n", ret[0].Id);
+           return ret[0].Id;
+    }
+    else
+        return -1;
+// position: 0.085414, -3.504547, 0.137028
 
 }
 

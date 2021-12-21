@@ -28,12 +28,17 @@
 #include "utility/CameraPoseVisualization.h"
 #include "parameters.h"
 #include "config.h"
+#include <image_obj_msgs/ImageBox.h>
+#include <image_obj_msgs/ImageObj.h>
+
 #define SKIP_FIRST_CNT 10
 using namespace std;
 
 queue<sensor_msgs::ImageConstPtr> image_buf,depth_buf;
 queue<sensor_msgs::PointCloudConstPtr> point_buf;
 queue<nav_msgs::Odometry::ConstPtr> pose_buf;
+// queue< image_feature_msgs::ImageFeaturesConstPtr> imagefeature_buf;
+queue< image_obj_msgs::ImageObjConstPtr> imageobj_buf;
 queue<Eigen::Vector3d> odometry_buf;
 std::mutex m_buf;
 std::mutex m_process;
@@ -99,6 +104,10 @@ void new_sequence()
         image_buf.pop();
     while(!depth_buf.empty())
         depth_buf.pop();
+    // while(!imagefeature_buf.empty())
+    //     imagefeature_buf.pop();
+    while(!imageobj_buf.empty())
+        imageobj_buf.pop();
     while(!point_buf.empty())
         point_buf.pop();
     while(!pose_buf.empty())
@@ -312,6 +321,28 @@ void extrinsic_callback(const nav_msgs::Odometry::ConstPtr &pose_msg)
     m_process.unlock();
 }
 
+// void featureCallback(const image_feature_msgs::ImageFeaturesConstPtr &msg)
+// {
+//     if(!LOOP_CLOSURE)
+//         return;
+//      m_buf.lock();
+//       cout <<fixed<<setprecision(6)<< "image_feature_msgs "<<msg->header.stamp.toSec()<<endl;
+//      imagefeature_buf.push(msg);
+//      m_buf.unlock();
+// }
+
+void image_objCallback(const  image_obj_msgs::ImageObjConstPtr &msg)
+{
+    if(!LOOP_CLOSURE)
+        return;
+
+        
+        //  cout << msg->header.stamp.toSec()<<endl;
+     m_buf.lock();
+     imageobj_buf.push(msg);
+     m_buf.unlock();
+}
+
 void process()
 {
     if (!LOOP_CLOSURE)
@@ -322,11 +353,17 @@ void process()
         sensor_msgs::ImageConstPtr depth_msg = NULL;
         sensor_msgs::PointCloudConstPtr point_msg = NULL;
         nav_msgs::Odometry::ConstPtr pose_msg = NULL;
+        // image_feature_msgs::ImageFeaturesConstPtr  imagefeature_msg = NULL;
+        image_obj_msgs::ImageObjConstPtr imageobj_msg = NULL;
         // find out the messages with same time stamp
         m_buf.lock();
         //get image_msg, pose_msg and point_msg
-        if(!image_buf.empty() && !point_buf.empty() && !pose_buf.empty())
+    
+
+        if(!image_buf.empty() && !point_buf.empty() && !pose_buf.empty() && !imageobj_buf.empty())
         {
+            cout <<fixed<<setprecision(6)<< "===========================image_msg "<<image_buf.front()->header.stamp.toSec()<<endl;
+           cout <<fixed<<setprecision(6)<< "!!!!!!!!!!!!!!!!!!!!!!!!!!imageobj_msg "<<imageobj_buf.back()->header.stamp.toSec()<<endl;
             if (image_buf.front()->header.stamp.toSec() > pose_buf.front()->header.stamp.toSec())
             {
                 pose_buf.pop();
@@ -337,11 +374,26 @@ void process()
                 point_buf.pop();
                 printf("throw point at beginning\n");
             }
-            else if (image_buf.back()->header.stamp.toSec() >= pose_buf.front()->header.stamp.toSec()
-                && point_buf.back()->header.stamp.toSec() >= pose_buf.front()->header.stamp.toSec())
+            // else if (image_buf.front()->header.stamp.toSec() > imagefeature_buf.front()->header.stamp.toSec())
+            // {
+            //     imagefeature_buf.pop();
+            //     printf("throw imagefeature_buf at beginning\n");
+            // }  
+             else if ( image_buf.front()->header.stamp.toSec() > imageobj_buf.front()->header.stamp.toSec() )
             {
+                // cout <<fixed<<setprecision(6)<<"imageobj_buf.back()"<< imageobj_buf.back()->header.stamp.toSec()<<endl;
+                //   cout <<"imageobj_buf size"<< imageobj_buf.size()<<endl;
+                imageobj_buf.pop();
+                printf("throw imageobj_buf at beginning\n");
+            }  
+             else if (image_buf.back()->header.stamp.toSec() >= pose_buf.front()->header.stamp.toSec()
+                && point_buf.back()->header.stamp.toSec() >= pose_buf.front()->header.stamp.toSec() &&  !imageobj_buf.empty()
+                )
+            {
+            cout <<fixed<<setprecision(6)<<"imageobj_buf.size() "<< imageobj_buf.size()<<endl;
+
                 pose_msg = pose_buf.front();
-                pose_buf.pop();
+                  pose_buf.pop();
                 while (!pose_buf.empty())
                     pose_buf.pop();
                 while (image_buf.front()->header.stamp.toSec() < pose_msg->header.stamp.toSec())
@@ -353,12 +405,34 @@ void process()
                 depth_msg = depth_buf.front();
                 image_buf.pop();
                 depth_buf.pop();
+               
+            //    while (imagefeature_buf.front()->header.stamp.toSec() < pose_msg->header.stamp.toSec())
+            //         imagefeature_buf.pop();   
+            //     imagefeature_msg = imagefeature_buf.front();
+            //     imagefeature_buf.pop();
 
-
+                // cout <<"====================================================="<<endl;
+                //  cout <<fixed<<setprecision(6)<<"imageobj_buf.front() "<< imageobj_buf.front()->header.stamp.toSec()<<endl;
+                //  cout <<fixed<<setprecision(6)<<"imageobj_buf.back()"<< imageobj_buf.back()->header.stamp.toSec()<<endl;
+                //  cout <<fixed<<setprecision(6)<<"pose_buf.front() "<<pose_msg->header.stamp.toSec()<<endl;
+                if ( imageobj_buf.back()->header.stamp.toSec() >= pose_msg->header.stamp.toSec()){
+                     while (imageobj_buf.front()->header.stamp.toSec() < pose_msg->header.stamp.toSec() )
+                            imageobj_buf.pop();   
+                cout << "**************box******************"<<endl;
+                if ( !imageobj_buf.empty()){
+                     imageobj_msg = imageobj_buf.front();
+                imageobj_buf.pop();
+                }
+                }
+              
+                
+              
                 while (point_buf.front()->header.stamp.toSec() < pose_msg->header.stamp.toSec())
                     point_buf.pop();
                 point_msg = point_buf.front();
                 point_buf.pop();
+
+              
             }
         }
         m_buf.unlock();
@@ -472,12 +546,34 @@ void process()
                         }
                     }
                 }
+                vector<Object_t> objects;
                 //debug: ROS_WARN("Depth points count: %d", count_);
+                if (imageobj_msg!= NULL){
+                    cv::Mat show_img;
+                cv::cvtColor(ptr->image,show_img,  CV_GRAY2RGB);
+               cout << "**************box******************"<< imageobj_msg-> boxes.size() <<endl;
+               for ( auto &box : imageobj_msg-> boxes ){       
+                    Object_t obj;
+                    obj.id = box.box[6];
+                    obj.tl.x = box.box[0];
+                    obj.tl.y = box.box[1];
+                    obj.br.x = box.box[2];
+                    obj.br.y = box.box[3];
+                    obj.score = box.box[4];
+                     cv::rectangle(show_img,obj.tl,obj.br, cv::Scalar(0,255,255) ,1);
+                     objects.push_back(obj);
+                    // cout << box.box.size()<<endl;
+              }
+            cv::imshow("vis", show_img);
+            cv::waitKey(5);
+
+                }
+                
 
                 // 通过frame_index标记对应帧
                 // add sparse depth img to this class
                 KeyFrame* keyframe = new KeyFrame(pose_msg->header.stamp.toSec(), frame_index, T, R, image, point_3d_depth,
-                                   point_3d, point_2d_uv, point_2d_normal, point_id, sequence);
+                                   point_3d, point_2d_uv, point_2d_normal, point_id, objects,sequence);
                 m_process.lock();
                 start_flag = 1;
                 posegraph.addKeyFrame(keyframe, 1);
@@ -590,6 +686,8 @@ int main(int argc, char **argv)
         cout << "vocabulary_file" << vocabulary_file << endl;
         posegraph.loadVocabulary(vocabulary_file);
 
+        posegraph.loadNetVlad();
+
         BRIEF_PATTERN_FILE = pkg_path + "/../support_files/brief_pattern.yml";
         cout << "BRIEF_PATTERN_FILE" << BRIEF_PATTERN_FILE << endl;
         m_camera = camodocal::CameraFactory::instance()->generateCameraFromYamlFile(config_file.c_str());
@@ -654,7 +752,10 @@ int main(int argc, char **argv)
     ros::Subscriber sub_extrinsic = n.subscribe("/vins_estimator/extrinsic", 2000, extrinsic_callback);
     //get keyframe_point(pointclude), store in point_buf (marginalization_flag == 0)
     ros::Subscriber sub_point = n.subscribe("/vins_estimator/keyframe_point", 2000, point_callback);
+    
+    // ros::Subscriber sub_feature_ = n.subscribe("/d400/features", 2000, featureCallback);//netvlad
 
+    ros::Subscriber sub_obj = n.subscribe("/image/detected_obj", 2000, image_objCallback,ros::TransportHints().tcpNoDelay()); //yolov4 box
 
     // do relocalization here.
     // pose_graph publish match_points to vins_estimator, estimator then publish relo_relative_pose

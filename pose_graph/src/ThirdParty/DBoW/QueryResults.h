@@ -9,7 +9,8 @@
 
 #ifndef __D_T_QUERY_RESULTS__
 #define __D_T_QUERY_RESULTS__
-
+#include <iostream>
+#include <fstream>
 #include <vector>
 
 namespace DBoW2 {

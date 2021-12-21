@@ -42,7 +42,10 @@
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>camera_model</build_depend>
   <run_depend>camera_model</run_depend>
-
+  <run_depend>image_obj_msgs</run_depend>
+  <build_depend>image_obj_msgs</build_depend>
+  <build_depend>message_generation</build_depend>
+  <run_depend>message_runtime</run_depend>
 
 
   <!-- The export tag contains other, unspecified, tags -->

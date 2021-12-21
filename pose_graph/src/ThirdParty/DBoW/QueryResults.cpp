@@ -7,8 +7,7 @@
  *
  */
 
-#include <iostream>
-#include <fstream>
+
 #include "QueryResults.h"
 
 using namespace std;

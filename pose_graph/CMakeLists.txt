@@ -16,6 +16,7 @@ find_package(catkin REQUIRED COMPONENTS
     pcl_ros
     pcl_conversions
     message_filters
+    image_obj_msgs
     )
 
 find_package(OpenCV)
@@ -38,11 +39,15 @@ include_directories(
     ${OpenCV_INCLUDE_DIRS}
      )
 
-catkin_package()
+     catkin_package(
+        CATKIN_DEPENDS
+            image_obj_msgs
+    )
 
 add_executable(pose_graph
     src/pose_graph_node.cpp
     src/pose_graph.cpp
+    src/netvlad.cpp
     src/keyframe.cpp
     src/sub_octomap_construction.cpp
     src/ros_puber.cpp

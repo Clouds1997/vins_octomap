@@ -38,6 +38,9 @@
 #include "octomap_fusion.h"
 #include "config.h"
 
+#include <image_feature_msgs/ImageFeatures.h>
+#include "netvlad.h"
+
 #define SHOW_S_EDGE false
 #define SHOW_L_EDGE false
 #define SAVE_LOOP_PATH true
@@ -54,6 +57,7 @@ public:
 	void addKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop);
 	void loadKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop);
 	void loadVocabulary(std::string voc_path);
+	void loadNetVlad();
 	void updateKeyFrameLoop(int index, Eigen::Matrix<double, 8, 1 > &_loop_info);
 	KeyFrame* getKeyFrame(int index);
 	nav_msgs::Path path[10];
@@ -78,6 +82,7 @@ public:
 
 private:
 	int detectLoop(KeyFrame* keyframe, int frame_index);
+	int detectLoopNetVlad(KeyFrame* keyframe, int frame_index);
 	void addKeyFrameIntoVoc(KeyFrame* keyframe);
 	void optimize4DoF();
 	void updatePath();
@@ -100,6 +105,8 @@ private:
 
 	BriefDatabase db;
 	BriefVocabulary* voc;
+
+	NetVLAD *netvlad;
 
 	ros::Publisher pub_pg_path;
 	ros::Publisher pub_base_path;

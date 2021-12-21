@@ -27,7 +27,7 @@ class RosPuber{
 public:
 	RosPuber( ros::NodeHandle& nh );
 	void pubOctoMap( octomap::OcTree* octree );
-	// void pubsubMap( octomap::OcTree* octree );
+	void pubsubMap( octomap::OcTree* octree );
 	
 private:
 	ros::NodeHandle nh_;

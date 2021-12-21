@@ -12,6 +12,7 @@
 #include "parameters.h"
 #include "ThirdParty/DBoW/DBoW2.h"
 #include "ThirdParty/DVision/DVision.h"
+#include <image_feature_msgs/ImageFeatures.h>
 
 #define MIN_LOOP_NUM 25
 
@@ -28,11 +29,20 @@ public:
 
   DVision::BRIEF m_brief;
 };
+typedef struct Object{
+	int id;
+	float score;
+	cv::Point2i tl;
+	cv::Point br;
+}Object_t;
 
 class KeyFrame
 {
 public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+	KeyFrame(double _time_stamp, int _index, Vector3d &_vio_T_w_i, Matrix3d &_vio_R_w_i, cv::Mat &_image, vector<cv::Point3f> &_point_3d_depth,
+			 vector<cv::Point3f> &_point_3d, vector<cv::Point2f> &_point_2d_uv, vector<cv::Point2f> &_point_2d_normal, 
+			 vector<double> &_point_id, vector<Object_t> &_objs,int _sequence);
 	KeyFrame(double _time_stamp, int _index, Vector3d &_vio_T_w_i, Matrix3d &_vio_R_w_i, cv::Mat &_image, vector<cv::Point3f> &_point_3d_depth,
 			 vector<cv::Point3f> &_point_3d, vector<cv::Point2f> &_point_2d_uv, vector<cv::Point2f> &_point_2d_normal, 
 			 vector<double> &_point_id, int _sequence);
@@ -98,8 +108,11 @@ public:
 	vector<cv::KeyPoint> window_keypoints;
 	vector<BRIEF::bitset> brief_descriptors;
 	vector<BRIEF::bitset> window_brief_descriptors;
+	vector<Object_t> objs;
 	bool has_fast_point;
 	int sequence;
+
+	image_feature_msgs::ImageFeaturesConstPtr global_desc;
 
 	bool has_loop;
 	int loop_index;

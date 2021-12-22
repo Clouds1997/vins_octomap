@@ -45,7 +45,7 @@ class Detector:
     def realtime_detect(self, image):
 
         sized = cv2.resize(image, (self.model .width,  self.model .height))
-        sized = cv2.cvtColor(sized, cv2.COLOR_BGR2RGB)
+        # sized = cv2.cvtColor(sized, cv2.COLOR_BGR2RGB)
         width = image.shape[1]
         height = image.shape[0]
         boxes = do_detect(self.model, sized, 0.5, 0.4, self.use_cuda)
@@ -64,5 +64,6 @@ class Detector:
         # cv2.waitKey(1)
 
         img_plot = plot_boxes_cv2(image, boxes[0], class_names=self.class_names)
-
-        return img_plot,[boxsrc]
+        cv2.imshow('rectangle', img_plot)
+        cv2.waitKey(1)
+        return image,[boxsrc]

@@ -9,8 +9,8 @@
     <param name="input_image_topic" value="/d400/color/image_raw"/>
     <!-- <param name="enable_floating_window" value="true"/>
     <param name="enable_rate_info" value="true"/> -->
-    <param name="model_file" value="$(find yolov4_ros)/models_old/yolov4.cfg"/>
-    <param name="prototxt_file" value="$(find yolov4_ros)/models_old/yolov4.weights"/>
+    <param name="model_file" value="$(find yolov4_ros)/models/yolov41.cfg"/>
+    <param name="prototxt_file" value="$(find yolov4_ros)/models/yolov41.weights"/>
     <param name="namesfile" value="$(find yolov4_ros)/models/coco.names"/>
     <param name="use_cuda" value="true"/>
 

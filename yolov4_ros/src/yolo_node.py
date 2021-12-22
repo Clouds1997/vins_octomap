@@ -53,6 +53,7 @@ class App:
         except CvBridgeError as e:
             rospy.logwarn("Cannot convert ros image to cv image, err: {}".format(e))
             return
+        cv_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
         cv_image,boxes = self.detector.realtime_detect(cv_image)
         # if self.enable_rate_info:
         #     time_now = rospy.Time.now()

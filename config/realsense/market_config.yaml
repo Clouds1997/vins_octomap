@@ -25,7 +25,7 @@ projection_parameters:
    cy: 242.90113830566406
 
    #pointcloud settings
-pcl_dist: 10
+pcl_dist: 1
 u_boundary: 10
 d_boundary: 10
 l_boundary: 40

@@ -528,6 +528,34 @@ void process()
 
                     //printf("u %f, v %f \n", p_2d_uv.x, p_2d_uv.y);
                 }
+
+                // 获取动态锚框
+                vector<Object_t> objects;
+                cv::Mat mask = cv::Mat::zeros(image.size(), CV_8UC1);
+                //debug: ROS_WARN("Depth points count: %d", count_);
+                if (imageobj_msg!= NULL){
+                    cv::Mat show_img;
+                    cv::cvtColor(ptr->image,show_img,  CV_GRAY2RGB);
+                     cout << "**************box******************"<< imageobj_msg-> boxes.size() <<endl;
+                    for ( auto &box : imageobj_msg-> boxes ){       
+                        Object_t obj;
+                        obj.id = box.box[6];
+                        obj.tl.x = box.box[0];
+                        obj.tl.y = box.box[1];
+                        obj.br.x = box.box[2];
+                        obj.br.y = box.box[3];
+                        obj.score = box.box[4];
+                        cv::Rect rect(box.box[0],box.box[1], box.box[2] - box.box[0], box.box[3] -  box.box[1]);
+                        mask(rect).setTo(255);
+                        // cv::rectangle(show_img,obj.tl,obj.br, cv::Scalar(0,255,255) ,1);
+                        objects.push_back(obj);
+                        // cout << box.box.size()<<endl;
+                    }
+                }
+                cv::imshow("ori", image);
+                cv::imshow("vis", mask);
+                cv::waitKey(1);
+
                 // ROW: 480 y  COL: 640 x
                 //debug: int count_ = 0;
                 for (int i = L_BOUNDARY; i < COL - R_BOUNDARY; i += PCL_DIST)
@@ -539,36 +567,16 @@ void process()
 						//depth is aligned
                         m_camera->liftProjective(a, b);
                         float depth_val = ((float)depth.at<unsigned short>(j, i)) / 1000.0;
-                        if (depth_val > PCL_MIN_DIST && depth_val < PCL_MAX_DIST)
+                        //  && mask.at<uchar>(i,j) == 0 去除锚框中的点
+                        // std::cout << static_cast<int>(mask.ptr<uchar>(j)[i]) <<" ";
+                        if (depth_val > PCL_MIN_DIST && depth_val < PCL_MAX_DIST && static_cast<int>(mask.ptr<uchar>(j)[i]) == 0)
                         {
                             //debug: ++count_;
                             point_3d_depth.push_back(cv::Point3f(b.x() * depth_val, b.y() * depth_val, depth_val));
                         }
                     }
                 }
-                vector<Object_t> objects;
-                //debug: ROS_WARN("Depth points count: %d", count_);
-                if (imageobj_msg!= NULL){
-                    cv::Mat show_img;
-                cv::cvtColor(ptr->image,show_img,  CV_GRAY2RGB);
-               cout << "**************box******************"<< imageobj_msg-> boxes.size() <<endl;
-               for ( auto &box : imageobj_msg-> boxes ){       
-                    Object_t obj;
-                    obj.id = box.box[6];
-                    obj.tl.x = box.box[0];
-                    obj.tl.y = box.box[1];
-                    obj.br.x = box.box[2];
-                    obj.br.y = box.box[3];
-                    obj.score = box.box[4];
-                     cv::rectangle(show_img,obj.tl,obj.br, cv::Scalar(0,255,255) ,1);
-                     objects.push_back(obj);
-                    // cout << box.box.size()<<endl;
-              }
-            cv::imshow("vis", show_img);
-            cv::waitKey(5);
-
-                }
-                
+                cout <<endl;
 
                 // 通过frame_index标记对应帧
                 // add sparse depth img to this class

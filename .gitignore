@@ -1,3 +1,5 @@
 build
 devel
 .vscode
+yolov4_ros/models
+yolov4_ros/models_old

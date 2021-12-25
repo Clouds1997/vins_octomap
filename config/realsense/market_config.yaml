@@ -26,8 +26,8 @@ projection_parameters:
 
    #pointcloud settings
 pcl_dist: 1
-u_boundary: 10
-d_boundary: 10
+u_boundary: 40
+d_boundary: 40
 l_boundary: 40
 r_boundary: 40
 pcl_min_dist: 0.3

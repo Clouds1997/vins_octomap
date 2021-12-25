@@ -63,7 +63,7 @@ class Detector:
         # cv2.imshow('rectangle', img)
         # cv2.waitKey(1)
 
-        img_plot = plot_boxes_cv2(image, boxes[0], class_names=self.class_names)
-        cv2.imshow('rectangle', img_plot)
-        cv2.waitKey(1)
+        # img_plot = plot_boxes_cv2(image, boxes[0], class_names=self.class_names)
+        # cv2.imshow('rectangle', img_plot)
+        # cv2.waitKey(1)
         return image,[boxsrc]

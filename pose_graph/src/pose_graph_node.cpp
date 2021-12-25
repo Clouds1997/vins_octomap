@@ -31,6 +31,9 @@
 #include <image_obj_msgs/ImageBox.h>
 #include <image_obj_msgs/ImageObj.h>
 
+
+#include <sys/time.h>
+
 #define SKIP_FIRST_CNT 10
 using namespace std;
 
@@ -343,6 +346,62 @@ void image_objCallback(const  image_obj_msgs::ImageObjConstPtr &msg)
      m_buf.unlock();
 }
 
+
+void segmentPointCloudByKmeans ( const vector< Eigen::Vector2d >& pts2d, const vector< Eigen::Vector3d >& pts3d, const int n_clusters, vector< vector< Eigen::Vector2d > >& clusters_2d, vector< vector< Eigen::Vector3d > >& clusters_3d )
+{
+    // Convert
+    cv::Mat points ( pts3d.size(), 3, CV_32F, cv::Scalar ( 0,0,0 ) );
+    cv::Mat centers ( n_clusters, 1, points.type() );
+
+    // Convert to opencv type
+    for ( size_t i = 0; i < pts3d.size(); i ++ ) {
+        const Eigen::Vector3d& ept = pts3d.at ( i );
+        points.at<float> ( i, 0 ) = ept[0];
+        points.at<float> ( i, 1 ) = ept[1];
+        points.at<float> ( i, 2 ) = ept[2];
+    } // for all points
+
+
+    // Do Kmeans
+    cv::Mat labels;
+    cv::TermCriteria criteria = cv::TermCriteria ( CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 5, 2.0 );
+    cv::kmeans ( points, n_clusters, labels, criteria, 3, cv::KMEANS_PP_CENTERS, centers );
+
+    // Collect clusters.
+    clusters_2d.clear();
+    clusters_3d.clear();
+
+    clusters_2d.resize ( n_clusters );
+    clusters_3d.resize ( n_clusters );
+
+    for ( size_t i = 0; i < pts3d.size(); i ++ ) {
+        int label_idx = labels.at<int> ( i, 0 );
+        clusters_2d.at ( label_idx ).push_back ( pts2d.at ( i ) );
+        clusters_3d.at ( label_idx ).push_back ( pts3d.at ( i ) );
+    }
+
+} // segmentPointCloudByKmeans
+
+void drawClustersOnImage ( cv::Mat& io_img, const vector< vector< Eigen::Vector2d > >& clusters_2d, const std::vector<uint8_t>& colors )
+{
+
+    for ( size_t i = 0; i < clusters_2d.size(); i ++ ) {
+        uint8_t r = colors.at ( i * 3 );
+        uint8_t g = colors.at ( i * 3 + 1 );
+        uint8_t b = colors.at ( i * 3 + 2 );
+
+        // draw
+        const std::vector<Eigen::Vector2d>& pts = clusters_2d.at ( i );
+        for ( size_t j = 0; j < pts.size(); j ++ ) {
+            const Eigen::Vector2d& pt = pts.at ( j );
+            io_img.at<cv::Vec3b> ( pt[1], pt[0] ) [0] = r;
+            io_img.at<cv::Vec3b> ( pt[1], pt[0] ) [1] = g;
+            io_img.at<cv::Vec3b> ( pt[1], pt[0] ) [2] = b;
+        }
+    }
+} // drawClustersOnImages
+
+
 void process()
 {
     if (!LOOP_CLOSURE)
@@ -356,14 +415,13 @@ void process()
         // image_feature_msgs::ImageFeaturesConstPtr  imagefeature_msg = NULL;
         image_obj_msgs::ImageObjConstPtr imageobj_msg = NULL;
         // find out the messages with same time stamp
+
         m_buf.lock();
         //get image_msg, pose_msg and point_msg
-    
-
         if(!image_buf.empty() && !point_buf.empty() && !pose_buf.empty() && !imageobj_buf.empty())
         {
-            cout <<fixed<<setprecision(6)<< "===========================image_msg "<<image_buf.front()->header.stamp.toSec()<<endl;
-           cout <<fixed<<setprecision(6)<< "!!!!!!!!!!!!!!!!!!!!!!!!!!imageobj_msg "<<imageobj_buf.back()->header.stamp.toSec()<<endl;
+            cout <<fixed<<setprecision(6)<< "===============image_msg "<<image_buf.front()->header.stamp.toSec()<<endl;
+            cout <<fixed<<setprecision(6)<< "!!!!!!!!!!!!!!!!!!!!!!!!!!imageobj_msg "<<imageobj_buf.back()->header.stamp.toSec()<<endl;
             if (image_buf.front()->header.stamp.toSec() > pose_buf.front()->header.stamp.toSec())
             {
                 pose_buf.pop();
@@ -390,10 +448,10 @@ void process()
                 && point_buf.back()->header.stamp.toSec() >= pose_buf.front()->header.stamp.toSec() &&  !imageobj_buf.empty()
                 )
             {
-            cout <<fixed<<setprecision(6)<<"imageobj_buf.size() "<< imageobj_buf.size()<<endl;
+                cout <<fixed<<setprecision(6)<<"imageobj_buf.size() "<< imageobj_buf.size()<<endl;
 
                 pose_msg = pose_buf.front();
-                  pose_buf.pop();
+                pose_buf.pop();
                 while (!pose_buf.empty())
                     pose_buf.pop();
                 while (image_buf.front()->header.stamp.toSec() < pose_msg->header.stamp.toSec())
@@ -418,24 +476,21 @@ void process()
                 if ( imageobj_buf.back()->header.stamp.toSec() >= pose_msg->header.stamp.toSec()){
                      while (imageobj_buf.front()->header.stamp.toSec() < pose_msg->header.stamp.toSec() )
                             imageobj_buf.pop();   
-                cout << "**************box******************"<<endl;
-                if ( !imageobj_buf.empty()){
-                     imageobj_msg = imageobj_buf.front();
-                imageobj_buf.pop();
+                    cout << "**************box******************"<<endl;
+                    if ( !imageobj_buf.empty()){
+                        imageobj_msg = imageobj_buf.front();
+                    imageobj_buf.pop();
+                    }
                 }
-                }
-              
-                
               
                 while (point_buf.front()->header.stamp.toSec() < pose_msg->header.stamp.toSec())
                     point_buf.pop();
                 point_msg = point_buf.front();
                 point_buf.pop();
-
-              
             }
         }
         m_buf.unlock();
+        
         if (pose_msg != NULL)
         {
             //printf(" pose time %f \n", pose_msg->header.stamp.toSec());
@@ -536,7 +591,7 @@ void process()
                 if (imageobj_msg!= NULL){
                     cv::Mat show_img;
                     cv::cvtColor(ptr->image,show_img,  CV_GRAY2RGB);
-                     cout << "**************box******************"<< imageobj_msg-> boxes.size() <<endl;
+                    //  cout << "**************box******************"<< imageobj_msg-> boxes.size() <<endl;
                     for ( auto &box : imageobj_msg-> boxes ){       
                         Object_t obj;
                         obj.id = box.box[6];
@@ -552,12 +607,15 @@ void process()
                         // cout << box.box.size()<<endl;
                     }
                 }
-                cv::imshow("ori", image);
-                cv::imshow("vis", mask);
-                cv::waitKey(1);
+                // cv::imshow("ori", image);
+                // cv::imshow("vis", mask);
+                // cv::waitKey(1);
 
                 // ROW: 480 y  COL: 640 x
                 //debug: int count_ = 0;
+                std::vector<Eigen::Vector2d> pts2d;
+                std::vector<Eigen::Vector3d> pts3d;
+
                 for (int i = L_BOUNDARY; i < COL - R_BOUNDARY; i += PCL_DIST)
                 {
                     for (int j = U_BOUNDARY; j < ROW - D_BOUNDARY; j += PCL_DIST)
@@ -567,16 +625,38 @@ void process()
 						//depth is aligned
                         m_camera->liftProjective(a, b);
                         float depth_val = ((float)depth.at<unsigned short>(j, i)) / 1000.0;
-                        //  && mask.at<uchar>(i,j) == 0 去除锚框中的点
+                        //  && mask.at<uchar>(i,j) == 0 去除锚框中的点  
                         // std::cout << static_cast<int>(mask.ptr<uchar>(j)[i]) <<" ";
                         if (depth_val > PCL_MIN_DIST && depth_val < PCL_MAX_DIST && static_cast<int>(mask.ptr<uchar>(j)[i]) == 0)
                         {
                             //debug: ++count_;
                             point_3d_depth.push_back(cv::Point3f(b.x() * depth_val, b.y() * depth_val, depth_val));
+                            pts3d.push_back(Eigen::Vector3d(b.x() * depth_val, b.y() * depth_val, depth_val));
+                            pts2d.push_back ( Eigen::Vector2d ( i, j) );
                         }
                     }
                 }
-                cout <<endl;
+
+                struct timeval timeA;
+	            gettimeofday(&timeA, NULL);
+                // Calc Number of clusters.
+                int K_clusters = std::ceil ( ( double ) pts2d.size() / ( double ) 6000);
+
+                std::vector<std::vector<Eigen::Vector2d>> clusters_2d;
+                std::vector<std::vector<Eigen::Vector3d>> clusters_3d;
+                segmentPointCloudByKmeans ( pts2d, pts3d, K_clusters, clusters_2d, clusters_3d );
+
+                cv::Mat clusters = cv::Mat (image.size(), CV_8UC3, cv::Scalar ( 0, 0, 0 ) );
+
+                struct timeval timeB;
+	            gettimeofday(&timeB, NULL);
+                cout << (timeB.tv_usec - timeA.tv_usec)/1000<<"ms to cluster" << endl;
+                std::vector<uint8_t> colors_ = {213,0,0,197,17,98,170,0,255,98,0,234,48,79,254,41,98,255,0,145,234,0,184,212,0,191,165,0,200,83,100,221,23,174,234,0,255,214,0,255,171,0,255,109,0,221,44,0,62,39,35,33,33,33,38,50,56,144,164,174,224,224,224,161,136,127,255,112,67,255,152,0,255,193,7,255,235,59,192,202,51,139,195,74,67,160,71,0,150,136,0,172,193,3,169,244,100,181,246,63,81,181,103,58,183,171,71,188,236,64,122,239,83,80, 213,0,0,197,17,98,170,0,255,98,0,234,48,79,254,41,98,255,0,145,234,0,184,212,0,191,165,0,200,83,100,221,23,174,234,0,255,214,0,255,171,0,255,109,0,221,44,0,62,39,35,33,33,33,38,50,56,144,164,174,224,224,224,161,136,127,255,112,67,255,152,0,255,193,7,255,235,59,192,202,51,139,195,74,67,160,71,0,150,136,0,172,193,3,169,244,100,181,246,63,81,181,103,58,183,171,71,188,236,64,122,239,83,80};
+                // draw
+                drawClustersOnImage (clusters,clusters_2d, colors_ );
+
+                cv::imshow("clusters", clusters);
+                cv::waitKey(1);
 
                 // 通过frame_index标记对应帧
                 // add sparse depth img to this class

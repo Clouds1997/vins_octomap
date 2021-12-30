@@ -31,6 +31,9 @@
 #include <image_obj_msgs/ImageBox.h>
 #include <image_obj_msgs/ImageObj.h>
 
+#include <KMCUDA/kmcuda.h>
+// #include <DBoW2/DBoW2/FORB.h>
+
 
 #include <sys/time.h>
 
@@ -353,19 +356,42 @@ void segmentPointCloudByKmeans ( const vector< Eigen::Vector2d >& pts2d, const v
     cv::Mat points ( pts3d.size(), 3, CV_32F, cv::Scalar ( 0,0,0 ) );
     cv::Mat centers ( n_clusters, 1, points.type() );
 
+    uint32_t size = pts3d.size();
+
+    float samples[size * 3];
+
     // Convert to opencv type
     for ( size_t i = 0; i < pts3d.size(); i ++ ) {
         const Eigen::Vector3d& ept = pts3d.at ( i );
         points.at<float> ( i, 0 ) = ept[0];
         points.at<float> ( i, 1 ) = ept[1];
         points.at<float> ( i, 2 ) = ept[2];
+        samples[i * 3 + 0] = ept[0];
+        samples[i * 3 + 1] = ept[1];
+        samples[i * 3 + 2] = ept[2];
     } // for all points
 
 
     // Do Kmeans
-    cv::Mat labels;
-    cv::TermCriteria criteria = cv::TermCriteria ( CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 5, 2.0 );
-    cv::kmeans ( points, n_clusters, labels, criteria, 3, cv::KMEANS_PP_CENTERS, centers );
+    // cv::Mat labels;
+    // cv::TermCriteria criteria = cv::TermCriteria ( CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 5, 2.0 );
+    // cv::kmeans ( points, n_clusters, labels, criteria, 3, cv::KMEANS_PP_CENTERS, centers );
+
+    uint32_t assignments[size];
+    float centroids[size];
+
+    KMCUDAResult result = kmeans_cuda(
+    kmcudaInitMethodPlusPlus, NULL,  // kmeans++ centroids initialization
+    0.1,                            // less than 1% of the samples are reassigned in the end
+    0.1,                             // activate Yinyang refinement with 0.1 threshold
+    kmcudaDistanceMetricL2,          // Euclidean distance
+    size , 3, n_clusters,
+    0xDEADBEEF,                      // random generator seed
+    1,                               // use all available CUDA devices
+    -1,                              // samples are supplied from host
+    0,                               // not in float16x2 mode
+    1,                               // moderate verbosity
+    samples, centroids, assignments,nullptr);
 
     // Collect clusters.
     clusters_2d.clear();
@@ -375,7 +401,8 @@ void segmentPointCloudByKmeans ( const vector< Eigen::Vector2d >& pts2d, const v
     clusters_3d.resize ( n_clusters );
 
     for ( size_t i = 0; i < pts3d.size(); i ++ ) {
-        int label_idx = labels.at<int> ( i, 0 );
+        int label_idx = assignments[i];
+        // int label_idx = labels.at<int> ( i, 0 );
         clusters_2d.at ( label_idx ).push_back ( pts2d.at ( i ) );
         clusters_3d.at ( label_idx ).push_back ( pts3d.at ( i ) );
     }
@@ -420,8 +447,8 @@ void process()
         //get image_msg, pose_msg and point_msg
         if(!image_buf.empty() && !point_buf.empty() && !pose_buf.empty() && !imageobj_buf.empty())
         {
-            cout <<fixed<<setprecision(6)<< "===============image_msg "<<image_buf.front()->header.stamp.toSec()<<endl;
-            cout <<fixed<<setprecision(6)<< "!!!!!!!!!!!!!!!!!!!!!!!!!!imageobj_msg "<<imageobj_buf.back()->header.stamp.toSec()<<endl;
+            // cout <<fixed<<setprecision(6)<< "===============image_msg "<<image_buf.front()->header.stamp.toSec()<<endl;
+            // cout <<fixed<<setprecision(6)<< "!!!!!!!!!!!!!!!!!!!!!!!!!!imageobj_msg "<<imageobj_buf.back()->header.stamp.toSec()<<endl;
             if (image_buf.front()->header.stamp.toSec() > pose_buf.front()->header.stamp.toSec())
             {
                 pose_buf.pop();
@@ -448,7 +475,7 @@ void process()
                 && point_buf.back()->header.stamp.toSec() >= pose_buf.front()->header.stamp.toSec() &&  !imageobj_buf.empty()
                 )
             {
-                cout <<fixed<<setprecision(6)<<"imageobj_buf.size() "<< imageobj_buf.size()<<endl;
+                // cout <<fixed<<setprecision(6)<<"imageobj_buf.size() "<< imageobj_buf.size()<<endl;
 
                 pose_msg = pose_buf.front();
                 pose_buf.pop();
@@ -476,7 +503,7 @@ void process()
                 if ( imageobj_buf.back()->header.stamp.toSec() >= pose_msg->header.stamp.toSec()){
                      while (imageobj_buf.front()->header.stamp.toSec() < pose_msg->header.stamp.toSec() )
                             imageobj_buf.pop();   
-                    cout << "**************box******************"<<endl;
+                    // cout << "**************box******************"<<endl;
                     if ( !imageobj_buf.empty()){
                         imageobj_msg = imageobj_buf.front();
                     imageobj_buf.pop();
@@ -625,9 +652,9 @@ void process()
 						//depth is aligned
                         m_camera->liftProjective(a, b);
                         float depth_val = ((float)depth.at<unsigned short>(j, i)) / 1000.0;
-                        //  && mask.at<uchar>(i,j) == 0 去除锚框中的点  
+                        //  && mask.at<uchar>(i,j) == 0 去除锚框中的点   && static_cast<int>(mask.ptr<uchar>(j)[i]) == 0
                         // std::cout << static_cast<int>(mask.ptr<uchar>(j)[i]) <<" ";
-                        if (depth_val > PCL_MIN_DIST && depth_val < PCL_MAX_DIST && static_cast<int>(mask.ptr<uchar>(j)[i]) == 0)
+                        if (depth_val > PCL_MIN_DIST && depth_val < PCL_MAX_DIST)
                         {
                             //debug: ++count_;
                             point_3d_depth.push_back(cv::Point3f(b.x() * depth_val, b.y() * depth_val, depth_val));
@@ -639,24 +666,29 @@ void process()
 
                 struct timeval timeA;
 	            gettimeofday(&timeA, NULL);
-                // Calc Number of clusters.
-                int K_clusters = std::ceil ( ( double ) pts2d.size() / ( double ) 6000);
 
-                std::vector<std::vector<Eigen::Vector2d>> clusters_2d;
-                std::vector<std::vector<Eigen::Vector3d>> clusters_3d;
-                segmentPointCloudByKmeans ( pts2d, pts3d, K_clusters, clusters_2d, clusters_3d );
+                if(pts2d.size()> 0){
+                    // Calc Number of clusters.
+                    int K_clusters = std::ceil ( ( double ) pts2d.size() / ( double ) 12000);
 
-                cv::Mat clusters = cv::Mat (image.size(), CV_8UC3, cv::Scalar ( 0, 0, 0 ) );
+                    std::vector<std::vector<Eigen::Vector2d>> clusters_2d;
+                    std::vector<std::vector<Eigen::Vector3d>> clusters_3d;
+                    segmentPointCloudByKmeans ( pts2d, pts3d, K_clusters, clusters_2d, clusters_3d );
 
-                struct timeval timeB;
-	            gettimeofday(&timeB, NULL);
-                cout << (timeB.tv_usec - timeA.tv_usec)/1000<<"ms to cluster" << endl;
-                std::vector<uint8_t> colors_ = {213,0,0,197,17,98,170,0,255,98,0,234,48,79,254,41,98,255,0,145,234,0,184,212,0,191,165,0,200,83,100,221,23,174,234,0,255,214,0,255,171,0,255,109,0,221,44,0,62,39,35,33,33,33,38,50,56,144,164,174,224,224,224,161,136,127,255,112,67,255,152,0,255,193,7,255,235,59,192,202,51,139,195,74,67,160,71,0,150,136,0,172,193,3,169,244,100,181,246,63,81,181,103,58,183,171,71,188,236,64,122,239,83,80, 213,0,0,197,17,98,170,0,255,98,0,234,48,79,254,41,98,255,0,145,234,0,184,212,0,191,165,0,200,83,100,221,23,174,234,0,255,214,0,255,171,0,255,109,0,221,44,0,62,39,35,33,33,33,38,50,56,144,164,174,224,224,224,161,136,127,255,112,67,255,152,0,255,193,7,255,235,59,192,202,51,139,195,74,67,160,71,0,150,136,0,172,193,3,169,244,100,181,246,63,81,181,103,58,183,171,71,188,236,64,122,239,83,80};
-                // draw
-                drawClustersOnImage (clusters,clusters_2d, colors_ );
+                    cv::Mat clusters = cv::Mat (image.size(), CV_8UC3, cv::Scalar ( 0, 0, 0 ) );
+                    
+                    struct timeval timeB;
+                    gettimeofday(&timeB, NULL);
+                    cout << (timeB.tv_usec - timeA.tv_usec)/1000<<"ms to cluster" << endl;
+                    std::vector<uint8_t> colors_ = {213,0,0,197,17,98,170,0,255,98,0,234,48,79,254,41,98,255,0,145,234,0,184,212,0,191,165,0,200,83,100,221,23,174,234,0,255,214,0,255,171,0,255,109,0,221,44,0,62,39,35,33,33,33,38,50,56,144,164,174,224,224,224,161,136,127,255,112,67,255,152,0,255,193,7,255,235,59,192,202,51,139,195,74,67,160,71,0,150,136,0,172,193,3,169,244,100,181,246,63,81,181,103,58,183,171,71,188,236,64,122,239,83,80, 213,0,0,197,17,98,170,0,255,98,0,234,48,79,254,41,98,255,0,145,234,0,184,212,0,191,165,0,200,83,100,221,23,174,234,0,255,214,0,255,171,0,255,109,0,221,44,0,62,39,35,33,33,33,38,50,56,144,164,174,224,224,224,161,136,127,255,112,67,255,152,0,255,193,7,255,235,59,192,202,51,139,195,74,67,160,71,0,150,136,0,172,193,3,169,244,100,181,246,63,81,181,103,58,183,171,71,188,236,64,122,239,83,80};
+                    // draw
+                    drawClustersOnImage (clusters,clusters_2d, colors_ );
 
-                cv::imshow("clusters", clusters);
-                cv::waitKey(1);
+                    cv::imshow("clusters", clusters);
+                    cv::waitKey(1);
+                }
+            
+                
 
                 // 通过frame_index标记对应帧
                 // add sparse depth img to this class

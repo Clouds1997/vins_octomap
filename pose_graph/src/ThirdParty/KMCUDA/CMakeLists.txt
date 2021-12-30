@@ -10,9 +10,9 @@ find_package(OpenMP REQUIRED)
 
 find_package(CUDA QUIET REQUIRED)
 
-if (PROFILE OR CMAKE_BUILD_TYPE STREQUAL "Debug")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DPROFILE")
-endif()
+# if (PROFILE OR CMAKE_BUILD_TYPE STREQUAL "Debug")
+#   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DPROFILE")
+# endif()
 
 #set(CMAKE_VERBOSE_MAKEFILE on)
 
@@ -25,9 +25,9 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -Wall -Werror -DCUDA_ARCH=
 set(SOURCE_FILES kmcuda.cc kmcuda.h wrappers.h private.h fp_abstraction.h tricks.cuh
                  metric_abstraction.h kmeans.cu knn.cu transpose.cu)
 
-if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-  set(NVCC_FLAGS "-G -g")
-endif()
+# if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+#   set(NVCC_FLAGS "-G -g")
+# endif()
 
 set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -arch sm_${CUDA_ARCH} -Xptxas=-v -D_MWAITXINTRIN_H_INCLUDED -D_FORCE_INLINES")
 

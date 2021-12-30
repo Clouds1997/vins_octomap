@@ -618,7 +618,7 @@ void process()
                 if (imageobj_msg!= NULL){
                     cv::Mat show_img;
                     cv::cvtColor(ptr->image,show_img,  CV_GRAY2RGB);
-                    //  cout << "**************box******************"<< imageobj_msg-> boxes.size() <<endl;
+                     cout << "**************box******************"<< imageobj_msg-> boxes.size() <<endl;
                     for ( auto &box : imageobj_msg-> boxes ){       
                         Object_t obj;
                         obj.id = box.box[6];
@@ -654,7 +654,7 @@ void process()
                         float depth_val = ((float)depth.at<unsigned short>(j, i)) / 1000.0;
                         //  && mask.at<uchar>(i,j) == 0 去除锚框中的点   && static_cast<int>(mask.ptr<uchar>(j)[i]) == 0
                         // std::cout << static_cast<int>(mask.ptr<uchar>(j)[i]) <<" ";
-                        if (depth_val > PCL_MIN_DIST && depth_val < PCL_MAX_DIST)
+                        if (depth_val > PCL_MIN_DIST && depth_val < PCL_MAX_DIST&& static_cast<int>(mask.ptr<uchar>(j)[i]) == 0)
                         {
                             //debug: ++count_;
                             point_3d_depth.push_back(cv::Point3f(b.x() * depth_val, b.y() * depth_val, depth_val));
@@ -664,29 +664,29 @@ void process()
                     }
                 }
 
-                struct timeval timeA;
-	            gettimeofday(&timeA, NULL);
+                // struct timeval timeA;
+	            // gettimeofday(&timeA, NULL);
 
-                if(pts2d.size()> 0){
-                    // Calc Number of clusters.
-                    int K_clusters = std::ceil ( ( double ) pts2d.size() / ( double ) 12000);
+                // if(pts2d.size()> 0){
+                //     // Calc Number of clusters.
+                //     int K_clusters = std::ceil ( ( double ) pts2d.size() / ( double ) 12000);
 
-                    std::vector<std::vector<Eigen::Vector2d>> clusters_2d;
-                    std::vector<std::vector<Eigen::Vector3d>> clusters_3d;
-                    segmentPointCloudByKmeans ( pts2d, pts3d, K_clusters, clusters_2d, clusters_3d );
+                //     std::vector<std::vector<Eigen::Vector2d>> clusters_2d;
+                //     std::vector<std::vector<Eigen::Vector3d>> clusters_3d;
+                //     segmentPointCloudByKmeans ( pts2d, pts3d, K_clusters, clusters_2d, clusters_3d );
 
-                    cv::Mat clusters = cv::Mat (image.size(), CV_8UC3, cv::Scalar ( 0, 0, 0 ) );
+                //     cv::Mat clusters = cv::Mat (image.size(), CV_8UC3, cv::Scalar ( 0, 0, 0 ) );
                     
-                    struct timeval timeB;
-                    gettimeofday(&timeB, NULL);
-                    cout << (timeB.tv_usec - timeA.tv_usec)/1000<<"ms to cluster" << endl;
-                    std::vector<uint8_t> colors_ = {213,0,0,197,17,98,170,0,255,98,0,234,48,79,254,41,98,255,0,145,234,0,184,212,0,191,165,0,200,83,100,221,23,174,234,0,255,214,0,255,171,0,255,109,0,221,44,0,62,39,35,33,33,33,38,50,56,144,164,174,224,224,224,161,136,127,255,112,67,255,152,0,255,193,7,255,235,59,192,202,51,139,195,74,67,160,71,0,150,136,0,172,193,3,169,244,100,181,246,63,81,181,103,58,183,171,71,188,236,64,122,239,83,80, 213,0,0,197,17,98,170,0,255,98,0,234,48,79,254,41,98,255,0,145,234,0,184,212,0,191,165,0,200,83,100,221,23,174,234,0,255,214,0,255,171,0,255,109,0,221,44,0,62,39,35,33,33,33,38,50,56,144,164,174,224,224,224,161,136,127,255,112,67,255,152,0,255,193,7,255,235,59,192,202,51,139,195,74,67,160,71,0,150,136,0,172,193,3,169,244,100,181,246,63,81,181,103,58,183,171,71,188,236,64,122,239,83,80};
-                    // draw
-                    drawClustersOnImage (clusters,clusters_2d, colors_ );
+                //     struct timeval timeB;
+                //     gettimeofday(&timeB, NULL);
+                //     cout << (timeB.tv_usec - timeA.tv_usec)/1000<<"ms to cluster" << endl;
+                //     std::vector<uint8_t> colors_ = {213,0,0,197,17,98,170,0,255,98,0,234,48,79,254,41,98,255,0,145,234,0,184,212,0,191,165,0,200,83,100,221,23,174,234,0,255,214,0,255,171,0,255,109,0,221,44,0,62,39,35,33,33,33,38,50,56,144,164,174,224,224,224,161,136,127,255,112,67,255,152,0,255,193,7,255,235,59,192,202,51,139,195,74,67,160,71,0,150,136,0,172,193,3,169,244,100,181,246,63,81,181,103,58,183,171,71,188,236,64,122,239,83,80, 213,0,0,197,17,98,170,0,255,98,0,234,48,79,254,41,98,255,0,145,234,0,184,212,0,191,165,0,200,83,100,221,23,174,234,0,255,214,0,255,171,0,255,109,0,221,44,0,62,39,35,33,33,33,38,50,56,144,164,174,224,224,224,161,136,127,255,112,67,255,152,0,255,193,7,255,235,59,192,202,51,139,195,74,67,160,71,0,150,136,0,172,193,3,169,244,100,181,246,63,81,181,103,58,183,171,71,188,236,64,122,239,83,80};
+                //     // draw
+                //     drawClustersOnImage (clusters,clusters_2d, colors_ );
 
-                    cv::imshow("clusters", clusters);
-                    cv::waitKey(1);
-                }
+                //     cv::imshow("clusters", clusters);
+                //     cv::waitKey(1);
+                // }
             
                 
 

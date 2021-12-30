@@ -1,11 +1,11 @@
 <launch>
-    <arg name="config_path" default = "$(find feature_tracker)/../config/realsense/market_config.yaml" />
+    <arg name="config_path" default = "$(find feature_tracker)/../config/realsense/d455_config.yaml" />
     <!-- <arg name="depth_config_path" default = "$(find feature_tracker)/../config/realsense/market_depth_config.yaml" /> -->
     <arg name="octomap_config_path" default = "$(find feature_tracker)/../config/realsense/octomap_config.yaml" />  
     <arg name="vins_path" default = "$(find feature_tracker)/../config/../" />
     
     <node name="yolov4_ros" pkg="yolov4_ros" type="yolo_node.py" output="screen"> 
-        <param name="input_image_topic" value="/d400/color/image_raw"/>
+        <param name="input_image_topic" value="/camera/color/image_raw"/>
         <param name="model_file" value="$(find yolov4_ros)/models_old/yolov4.cfg"/>
         <param name="prototxt_file" value="$(find yolov4_ros)/models_old/yolov4.weights"/>
         <param name="namesfile" value="$(find yolov4_ros)/models/coco.names"/>

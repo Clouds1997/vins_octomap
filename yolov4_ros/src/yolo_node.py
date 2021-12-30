@@ -38,7 +38,7 @@ class App:
         self.pub_image_obj = rospy.Publisher("/image/detected_obj", ImageObj, queue_size=1)
 
     def _add_sub(self):
-        rospy.Subscriber("/d400/color/image_raw", Image, self._cb_image, queue_size=1,buff_size=2**24)
+        rospy.Subscriber(self.sub_image_topic, Image, self._cb_image, queue_size=1,buff_size=2**24)
 
     def run(self):
         self._init_params()

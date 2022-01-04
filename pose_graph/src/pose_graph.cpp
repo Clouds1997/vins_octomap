@@ -442,17 +442,17 @@ int PoseGraph::detectLoop(KeyFrame* keyframe, int frame_index)
         cv::waitKey(20);
     }
 */
-    if (find_loop && frame_index > 50)
-    {
-        int min_index = -1;
-        for (unsigned int i = 0; i < ret.size(); i++)
-        {
-            if (min_index == -1 || (ret[i].Id < min_index && ret[i].Score > 0.015))
-                min_index = ret[i].Id;
-        }
-        return min_index;
-    }
-    else
+    // if (find_loop && frame_index > 50)
+    // {
+    //     int min_index = -1;
+    //     for (unsigned int i = 0; i < ret.size(); i++)
+    //     {
+    //         if (min_index == -1 || (ret[i].Id < min_index && ret[i].Score > 0.015))
+    //             min_index = ret[i].Id;
+    //     }
+    //     return min_index;
+    // }
+    // else
         return -1;
 
 }

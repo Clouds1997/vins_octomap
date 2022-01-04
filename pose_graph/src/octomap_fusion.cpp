@@ -59,9 +59,15 @@ namespace dre_slam
             if (w_pts_i[2] > 6.0 || w_pts_i[2] < -2.0)
                 continue;
 
+<<<<<<< HEAD
             unsigned int B = kf->point_3d_color[i].x;
             unsigned int G = kf->point_3d_color[i].y;
             unsigned int R = kf->point_3d_color[i].z;
+=======
+            unsigned int R = kf->point_3d_color[i].x;
+            unsigned int G = kf->point_3d_color[i].y;
+            unsigned int B = kf->point_3d_color[i].z;
+>>>>>>> 4efa7513f48053610bc0e35b228a8b9cff65430e
 
             // cout << "the color is ::"<<R << " "<< G << " "<< B << endl;
 

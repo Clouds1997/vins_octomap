@@ -788,7 +788,7 @@ int main(int argc, char **argv)
 	// Load system configure.
 	dre_slam::Config* cfg = new dre_slam::Config( octomap_cfg_dir );
     posegraph.registerPub(n, cfg);
-
+    cout <<"there is ok"<<endl;
     // read param
     n.getParam("visualization_shift_x", VISUALIZATION_SHIFT_X);
     n.getParam("visualization_shift_y", VISUALIZATION_SHIFT_Y);

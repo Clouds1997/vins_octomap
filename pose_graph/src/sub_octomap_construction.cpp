@@ -65,7 +65,7 @@ void SubOctoMapConstruction::processing()
                 nkf_passed_ = 0;
                 SubOctomap* new_sub_map = cur_sub_map_;
 				
-				// insert one submap to fullmap.
+			// 	// insert one submap to fullmap.
 				octomap_fusion_->insertSubMap ( new_sub_map );
             } // if have to insert submap.
 
@@ -75,7 +75,7 @@ void SubOctoMapConstruction::processing()
 } // processing new keyframe.
 
 // 关键帧从这里插入
-void SubOctoMapConstruction::insertKeyFrame ( KeyFrame* kf )
+void SubOctoMapConstruction::insertKeyFrame (KeyFrame* kf )
 {
     // std::cout << "insertKeyFrame !!!!!!!"<<std::endl; 
     std::unique_lock<mutex> lock ( mutex_kfs_queue_ );

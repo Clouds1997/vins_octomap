@@ -7,7 +7,7 @@ image_topic: "/camera/color/image_raw"
 depth_topic: "/camera/aligned_depth_to_color/image_raw"
 output_path: "/home/hc/all_in_ros/output/"
 
-pcl_dist: 1
+pcl_dist: 10
 u_boundary: 10
 d_boundary: 10
 l_boundary: 40

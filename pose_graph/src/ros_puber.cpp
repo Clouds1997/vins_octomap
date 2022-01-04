@@ -53,16 +53,16 @@ RosPuber::RosPuber ( ros::NodeHandle& nh )
 } // RosPuber
 
 
-void RosPuber::pubOctoMap ( octomap::OcTree* octree )
+void RosPuber::pubOctoMap ( octomap::ColorOcTree* octree )
 {
     // std::cout << "pubOctoMap!!!!"<<std::endl;
     RunTimer t; t.start();
     if ( puber_octomap_.getNumSubscribers() == 0 ) {
         return;
     }
-
+    octree->prune();
     octomap_msgs::Octomap map_msg;
-    octomap_msgs::binaryMapToMsg( *octree, map_msg );
+    octomap_msgs::fullMapToMsg( *octree, map_msg );
     map_msg.header.frame_id = "world";
     map_msg.header.stamp = ros::Time::now();
     puber_octomap_.publish ( map_msg );
@@ -70,7 +70,7 @@ void RosPuber::pubOctoMap ( octomap::OcTree* octree )
     t.stop();
 } // pubOctoMap
 
-void RosPuber::pubsubMap ( octomap::OcTree* octree )
+void RosPuber::pubsubMap ( octomap::ColorOcTree* octree )
 {
     // std::cout << "pubsubMap!!!!"<<std::endl;
     RunTimer t; t.start();
@@ -79,7 +79,7 @@ void RosPuber::pubsubMap ( octomap::OcTree* octree )
     }
 
     octomap_msgs::Octomap map_msg;
-    octomap_msgs::binaryMapToMsg( *octree, map_msg );
+    octomap_msgs::fullMapToMsg( *octree, map_msg );
     map_msg.header.frame_id = "world";
     map_msg.header.stamp = ros::Time::now();
     puber_submap_.publish ( map_msg );

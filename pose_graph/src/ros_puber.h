@@ -20,14 +20,15 @@
 #include <ros/ros.h>
 #include <octomap_msgs/Octomap.h>
 #include <octomap/octomap.h>
+#include <octomap/ColorOcTree.h>
 #include <octomap_msgs/conversions.h>
 
 namespace dre_slam{
 class RosPuber{
 public:
 	RosPuber( ros::NodeHandle& nh );
-	void pubOctoMap( octomap::OcTree* octree );
-	void pubsubMap( octomap::OcTree* octree );
+	void pubOctoMap( octomap::ColorOcTree* octree );
+	void pubsubMap( octomap::ColorOcTree* octree );
 	
 private:
 	ros::NodeHandle nh_;

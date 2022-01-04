@@ -3,7 +3,7 @@
 #--------------------------------------------------------------------------------------------
 # OctoMap Construction
 #--------------------------------------------------------------------------------------------
-oc_voxel_size_: 0.3  # Voxel size of the OctoMap (m).
+oc_voxel_size_: 0.01  # Voxel size of the OctoMap (m).
 oc_submap_size_: 5    # Sub-OctoMap size (KFs)
 
 

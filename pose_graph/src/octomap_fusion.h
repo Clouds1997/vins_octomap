@@ -36,18 +36,18 @@ public:
 	void insertSubMap( SubOctomap* submap );
 	void insertOneScan2FullMapAndPub ( KeyFrame* kf, octomap::Pointcloud& point_cloud_c);
 	void fusionAndPub();  
-	void insertSubMap2NewTree(SubOctomap* submap, octomap::OcTree* new_tree);
+	void insertSubMap2NewTree(SubOctomap* submap, octomap::ColorOcTree* new_tree);
 	void processing();
 	void setLoopFlag();
 	bool getLoopFlag();
 	void saveOctoMap( const std::string& dir );
 	
 private: 
-	void transformTree(octomap::OcTree* src_tree, Sophus::SE3& Twc, octomap::OcTree* dst_tree);
+	void transformTree(octomap::ColorOcTree* src_tree, Sophus::SE3& Twc, octomap::ColorOcTree* dst_tree);
 
 	RosPuber* ros_puber_;	
 	Config* cfg_;
-	octomap::OcTree* full_map_;
+	octomap::ColorOcTree* full_map_;
 	std::list<SubOctomap*> submaps_;
 	
 	std::thread* th_octomap_fusion_;

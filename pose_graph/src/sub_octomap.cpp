@@ -22,7 +22,7 @@ namespace dre_slam
 
 SubOctomap::SubOctomap ( Config* cfg) :cfg_ ( cfg )
 {
-    sub_octree_ = new octomap::OcTree ( cfg->oc_voxel_size_ );
+    sub_octree_ = new octomap::ColorOcTree ( cfg->oc_voxel_size_ );
     sub_octree_->setOccupancyThres ( cfg->oc_occ_th_ );
     sub_octree_->setProbHit ( cfg->oc_prob_hit_ );
     sub_octree_->setProbMiss ( cfg->oc_prob_miss_ );
@@ -65,13 +65,27 @@ void SubOctomap::insertKeyFrame ( KeyFrame* kf, octomap::Pointcloud& point_cloud
 			continue;
 		
 		
-        point_cloud_b.push_back ( octomap::point3d ( ptb[0], ptb[1], ptb[2] ) );
+        // point_cloud_b.push_back ( octomap::point3d ( ptb[0], ptb[1], ptb[2] ) );
+
+
+        unsigned int B = kf->point_3d_color[i].x;
+        unsigned int G = kf->point_3d_color[i].y;
+        unsigned int R = kf->point_3d_color[i].z;
+
+        // cout << "the color is ::"<<R << " "<< G << " "<< B << endl;
+        sub_octree_->updateNode(octomap::point3d(ptb[0], ptb[1], ptb[2] ), true);
+
+        // octomap::OcTreeKey key;
+        // if (!full_map_->coordToKeyChecked(octomap::point3d(w_pts_i[0],w_pts_i[1],w_pts_i[2]), key))
+        //     cout << "the test is NULL" << endl;
+        sub_octree_->setNodeColor(ptb[0], ptb[1], ptb[2] ,R,G,B);
+
     }
 
     // Eigen::Vector3d& pt_o = Tbc.translation();
     // std::cout <<  pt_o[0] << " " << pt_o[1] << " " << pt_o[2] << "!!!!!!!!!!!!!!!!!11" << std::endl;
     // sub_octree_->insertPointCloud ( point_cloud_b, octomap::point3d ( pt_o[0],pt_o[1],pt_o[2] ), -1, true, true );
-    sub_octree_->insertPointCloud ( point_cloud_b, octomap::point3d ( 0,0,0), -1, true, true );
+    // sub_octree_->insertPointCloud ( point_cloud_b, octomap::point3d ( 0,0,0), -1, true, true );
     sub_octree_->updateInnerOccupancy();
 
 } // insertKeyFrame

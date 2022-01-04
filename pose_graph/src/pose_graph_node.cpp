@@ -350,64 +350,64 @@ void image_objCallback(const  image_obj_msgs::ImageObjConstPtr &msg)
 }
 
 
-void segmentPointCloudByKmeans ( const vector< Eigen::Vector2d >& pts2d, const vector< Eigen::Vector3d >& pts3d, const int n_clusters, vector< vector< Eigen::Vector2d > >& clusters_2d, vector< vector< Eigen::Vector3d > >& clusters_3d )
-{
-    // Convert
-    cv::Mat points ( pts3d.size(), 3, CV_32F, cv::Scalar ( 0,0,0 ) );
-    cv::Mat centers ( n_clusters, 1, points.type() );
+// void segmentPointCloudByKmeans ( const vector< Eigen::Vector2d >& pts2d, const vector< Eigen::Vector3d >& pts3d, const int n_clusters, vector< vector< Eigen::Vector2d > >& clusters_2d, vector< vector< Eigen::Vector3d > >& clusters_3d )
+// {
+//     // Convert
+//     cv::Mat points ( pts3d.size(), 3, CV_32F, cv::Scalar ( 0,0,0 ) );
+//     cv::Mat centers ( n_clusters, 1, points.type() );
 
-    uint32_t size = pts3d.size();
+//     uint32_t size = pts3d.size();
 
-    float samples[size * 3];
+//     float samples[size * 3];
 
-    // Convert to opencv type
-    for ( size_t i = 0; i < pts3d.size(); i ++ ) {
-        const Eigen::Vector3d& ept = pts3d.at ( i );
-        points.at<float> ( i, 0 ) = ept[0];
-        points.at<float> ( i, 1 ) = ept[1];
-        points.at<float> ( i, 2 ) = ept[2];
-        samples[i * 3 + 0] = ept[0];
-        samples[i * 3 + 1] = ept[1];
-        samples[i * 3 + 2] = ept[2];
-    } // for all points
+//     // Convert to opencv type
+//     for ( size_t i = 0; i < pts3d.size(); i ++ ) {
+//         const Eigen::Vector3d& ept = pts3d.at ( i );
+//         points.at<float> ( i, 0 ) = ept[0];
+//         points.at<float> ( i, 1 ) = ept[1];
+//         points.at<float> ( i, 2 ) = ept[2];
+//         samples[i * 3 + 0] = ept[0];
+//         samples[i * 3 + 1] = ept[1];
+//         samples[i * 3 + 2] = ept[2];
+//     } // for all points
 
 
-    // Do Kmeans
-    // cv::Mat labels;
-    // cv::TermCriteria criteria = cv::TermCriteria ( CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 5, 2.0 );
-    // cv::kmeans ( points, n_clusters, labels, criteria, 3, cv::KMEANS_PP_CENTERS, centers );
+//     // Do Kmeans
+//     // cv::Mat labels;
+//     // cv::TermCriteria criteria = cv::TermCriteria ( CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 5, 2.0 );
+//     // cv::kmeans ( points, n_clusters, labels, criteria, 3, cv::KMEANS_PP_CENTERS, centers );
 
-    uint32_t assignments[size];
-    float centroids[size];
+//     // uint32_t assignments[size];
+//     // float centroids[size];
 
-    KMCUDAResult result = kmeans_cuda(
-    kmcudaInitMethodPlusPlus, NULL,  // kmeans++ centroids initialization
-    0.1,                            // less than 1% of the samples are reassigned in the end
-    0.1,                             // activate Yinyang refinement with 0.1 threshold
-    kmcudaDistanceMetricL2,          // Euclidean distance
-    size , 3, n_clusters,
-    0xDEADBEEF,                      // random generator seed
-    1,                               // use all available CUDA devices
-    -1,                              // samples are supplied from host
-    0,                               // not in float16x2 mode
-    1,                               // moderate verbosity
-    samples, centroids, assignments,nullptr);
+//     // KMCUDAResult result = kmeans_cuda(
+//     // kmcudaInitMethodPlusPlus, NULL,  // kmeans++ centroids initialization
+//     // 0.1,                            // less than 1% of the samples are reassigned in the end
+//     // 0.1,                             // activate Yinyang refinement with 0.1 threshold
+//     // kmcudaDistanceMetricL2,          // Euclidean distance
+//     // size , 3, n_clusters,
+//     // 0xDEADBEEF,                      // random generator seed
+//     // 1,                               // use all available CUDA devices
+//     // -1,                              // samples are supplied from host
+//     // 0,                               // not in float16x2 mode
+//     // 1,                               // moderate verbosity
+//     // samples, centroids, assignments,nullptr);
 
-    // Collect clusters.
-    clusters_2d.clear();
-    clusters_3d.clear();
+//     // Collect clusters.
+//     clusters_2d.clear();
+//     clusters_3d.clear();
 
-    clusters_2d.resize ( n_clusters );
-    clusters_3d.resize ( n_clusters );
+//     clusters_2d.resize ( n_clusters );
+//     clusters_3d.resize ( n_clusters );
 
-    for ( size_t i = 0; i < pts3d.size(); i ++ ) {
-        int label_idx = assignments[i];
-        // int label_idx = labels.at<int> ( i, 0 );
-        clusters_2d.at ( label_idx ).push_back ( pts2d.at ( i ) );
-        clusters_3d.at ( label_idx ).push_back ( pts3d.at ( i ) );
-    }
+//     for ( size_t i = 0; i < pts3d.size(); i ++ ) {
+//         // int label_idx = assignments[i];
+//         // int label_idx = labels.at<int> ( i, 0 );
+//         clusters_2d.at ( label_idx ).push_back ( pts2d.at ( i ) );
+//         clusters_3d.at ( label_idx ).push_back ( pts3d.at ( i ) );
+//     }
 
-} // segmentPointCloudByKmeans
+// } // segmentPointCloudByKmeans
 
 void drawClustersOnImage ( cv::Mat& io_img, const vector< vector< Eigen::Vector2d > >& clusters_2d, const std::vector<uint8_t>& colors )
 {
@@ -541,6 +541,7 @@ void process()
             }
 
             cv_bridge::CvImageConstPtr ptr;
+            cv_bridge::CvImageConstPtr ptr_rgb;
             if (image_msg->encoding == "8UC1")
             {
                 sensor_msgs::Image img;
@@ -554,7 +555,8 @@ void process()
                 ptr = cv_bridge::toCvCopy(img, sensor_msgs::image_encodings::MONO8);
             }
             else
-                ptr = cv_bridge::toCvCopy(image_msg, sensor_msgs::image_encodings::MONO8);
+                ptr_rgb = cv_bridge::toCvCopy(image_msg, sensor_msgs::image_encodings::RGB8);
+                // ptr = cv_bridge::toCvCopy(image_msg, sensor_msgs::image_encodings::MONO8);
 
             //depth has encoding TYPE_16UC1
             cv_bridge::CvImageConstPtr depth_ptr;
@@ -571,7 +573,16 @@ void process()
                 depth_ptr = cv_bridge::toCvCopy(img, sensor_msgs::image_encodings::MONO16);
             }
 
-            cv::Mat image = ptr->image;
+            cv::Mat image;
+            cv::Mat image_rgb;
+            
+            cv::cvtColor(ptr_rgb->image,image_rgb,  CV_BGR2RGB);
+            cv::cvtColor(ptr_rgb->image,image,  CV_BGR2GRAY);
+
+            // cv::imshow("rgb", image_rgb);
+            // cv::waitKey(1);
+
+            
             cv::Mat depth = depth_ptr->image;
             // build keyframe
             Vector3d T = Vector3d(pose_msg->pose.pose.position.x,
@@ -587,6 +598,7 @@ void process()
                 vector<cv::Point2f> point_2d_uv;
                 vector<cv::Point2f> point_2d_normal;
                 vector<cv::Point3f> point_3d_depth;
+                vector<cv::Point3i> point_3d_color;
                 vector<double> point_id;
 
                 for (unsigned int i = 0; i < point_msg->points.size(); i++)
@@ -616,8 +628,8 @@ void process()
                 cv::Mat mask = cv::Mat::zeros(image.size(), CV_8UC1);
                 //debug: ROS_WARN("Depth points count: %d", count_);
                 if (imageobj_msg!= NULL){
-                    cv::Mat show_img;
-                    cv::cvtColor(ptr->image,show_img,  CV_GRAY2RGB);
+                    // cv::Mat show_img;
+                    // cv::cvtColor(ptr->image,show_img,  CV_GRAY2RGB);
                      cout << "**************box******************"<< imageobj_msg-> boxes.size() <<endl;
                     for ( auto &box : imageobj_msg-> boxes ){       
                         Object_t obj;
@@ -633,15 +645,18 @@ void process()
                         objects.push_back(obj);
                         // cout << box.box.size()<<endl;
                     }
+                    // cv::imshow("rgb", show_img);
+                    // cv::waitKey(1);
                 }
-                // cv::imshow("ori", image);
-                // cv::imshow("vis", mask);
+                // cv::imshow("mask", mask);
                 // cv::waitKey(1);
+                // cv::imshow("ori", image);
+
 
                 // ROW: 480 y  COL: 640 x
-                //debug: int count_ = 0;
-                std::vector<Eigen::Vector2d> pts2d;
-                std::vector<Eigen::Vector3d> pts3d;
+                // //debug: int count_ = 0;
+                // std::vector<Eigen::Vector2d> pts2d;
+                // std::vector<Eigen::Vector3d> pts3d;
 
                 for (int i = L_BOUNDARY; i < COL - R_BOUNDARY; i += PCL_DIST)
                 {
@@ -653,16 +668,31 @@ void process()
                         m_camera->liftProjective(a, b);
                         float depth_val = ((float)depth.at<unsigned short>(j, i)) / 1000.0;
                         //  && mask.at<uchar>(i,j) == 0 去除锚框中的点   && static_cast<int>(mask.ptr<uchar>(j)[i]) == 0
-                        // std::cout << static_cast<int>(mask.ptr<uchar>(j)[i]) <<" ";
-                        if (depth_val > PCL_MIN_DIST && depth_val < PCL_MAX_DIST&& static_cast<int>(mask.ptr<uchar>(j)[i]) == 0)
+                        // cout << mask.size() << endl;
+                        if (depth_val > PCL_MIN_DIST && depth_val < PCL_MAX_DIST&& (int)(mask.at<unsigned char>(j,i)) == 0)
                         {
                             //debug: ++count_;
+
+                            cv::Vec3b rgb=image_rgb.at<cv::Vec3b>(j,i);
+
+                            int R = static_cast<int>(rgb[0]);
+                            int G = static_cast<int>(rgb[1]);
+                            int B = static_cast<int>(rgb[2]);
+
+                            // R = R < 100 ? 50 : R < 200 ? 150 : 225;
+                            // G = G < 100 ? 50 : G < 200 ? 150 : 225;
+                            // B = B < 100 ? 50 : B < 200 ? 150 : 225;
+                            // std::cout << (int)mask.at<unsigned char>(j,i) <<" ";
                             point_3d_depth.push_back(cv::Point3f(b.x() * depth_val, b.y() * depth_val, depth_val));
-                            pts3d.push_back(Eigen::Vector3d(b.x() * depth_val, b.y() * depth_val, depth_val));
-                            pts2d.push_back ( Eigen::Vector2d ( i, j) );
+                            point_3d_color.push_back(cv::Point3i(R,G,B));
+                            // point_3d_color.push_back(cv::Point3i(255,255,255));
+                            // pts3d.push_back(Eigen::Vector3d(b.x() * depth_val, b.y() * depth_val, depth_val));
+                            // pts2d.push_back ( Eigen::Vector2d ( i, j) );
                         }
                     }
                 }
+		        // cout << point_3d_color.size() << endl;
+                // cout << endl;
 
                 // struct timeval timeA;
 	            // gettimeofday(&timeA, NULL);
@@ -691,9 +721,9 @@ void process()
                 
 
                 // 通过frame_index标记对应帧
-                // add sparse depth img to this class
-                KeyFrame* keyframe = new KeyFrame(pose_msg->header.stamp.toSec(), frame_index, T, R, image, point_3d_depth,
-                                   point_3d, point_2d_uv, point_2d_normal, point_id, objects,sequence);
+                // add sparse depth img to this class point_3d_color,
+                KeyFrame* keyframe = new KeyFrame(pose_msg->header.stamp.toSec(), frame_index, T, R, image, point_3d_depth, point_3d_color,
+                                   point_3d, point_2d_uv, point_2d_normal, point_id,sequence);
                 m_process.lock();
                 start_flag = 1;
                 posegraph.addKeyFrame(keyframe, 1);

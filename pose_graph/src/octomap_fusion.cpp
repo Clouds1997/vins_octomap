@@ -24,7 +24,7 @@ namespace dre_slam
         // std::cout << "OctoMapFusion is ok!" << std::endl;
         //首先先创建一个新的进程进行地图拼接的工作
         th_octomap_fusion_ = new std::thread(&OctoMapFusion::processing, this);
-        full_map_ = new octomap::OcTree(cfg_->oc_voxel_size_);
+        full_map_ = new octomap::ColorOcTree(cfg_->oc_voxel_size_);
         full_map_->setOccupancyThres(cfg_->oc_occ_th_);
         full_map_->setProbHit(cfg_->oc_prob_hit_);
         full_map_->setProbMiss(cfg_->oc_prob_miss_);
@@ -59,12 +59,26 @@ namespace dre_slam
             if (w_pts_i[2] > 6.0 || w_pts_i[2] < -2.0)
                 continue;
 
+            unsigned int R = kf->point_3d_color[i].x;
+            unsigned int G = kf->point_3d_color[i].y;
+            unsigned int B = kf->point_3d_color[i].z;
+
+            // cout << "the color is ::"<<R << " "<< G << " "<< B << endl;
+
             point_cloud_w.push_back(octomap::point3d(w_pts_i[0], w_pts_i[1], w_pts_i[2]));
+            full_map_->updateNode(octomap::point3d(w_pts_i[0], w_pts_i[1], w_pts_i[2]), true);
+
+            // octomap::OcTreeKey key;
+            // if (!full_map_->coordToKeyChecked(octomap::point3d(w_pts_i[0],w_pts_i[1],w_pts_i[2]), key))
+            //     cout << "the test is NULL" << endl;
+            full_map_->setNodeColor(w_pts_i[0], w_pts_i[1], w_pts_i[2],R,G,B);
+
+            // full_map_->setNodeColor(w_pts_i[0], w_pts_i[1], w_pts_i[2], 0, 0, 0);
         }
 
         std::unique_lock<mutex> lock(mutex_full_map_);
         // update the map.
-        full_map_->insertPointCloud(point_cloud_w, octomap::point3d(0, 0, 0), -1, true, true);
+        // full_map_->insertPointCloud(point_cloud_w, octomap::point3d(0, 0, 0), -1, true, true);
         full_map_->updateInnerOccupancy();
 
         // publish OctoMap.
@@ -82,7 +96,7 @@ namespace dre_slam
         }
 
         // Create new tree.  这一步是初始化一个新的全局地图
-        octomap::OcTree *new_tree = new octomap::OcTree(cfg_->oc_voxel_size_);
+        octomap::ColorOcTree *new_tree = new octomap::ColorOcTree(cfg_->oc_voxel_size_);
         new_tree->setOccupancyThres(cfg_->oc_occ_th_);
         new_tree->setProbHit(cfg_->oc_prob_hit_);
         new_tree->setProbMiss(cfg_->oc_prob_miss_);
@@ -104,7 +118,7 @@ namespace dre_slam
     } // fuse the sub octrees.
 
     // 这一个是将小的子图，插入到全局地图里面
-    void OctoMapFusion::insertSubMap2NewTree(SubOctomap *submap, octomap::OcTree *new_tree)
+    void OctoMapFusion::insertSubMap2NewTree(SubOctomap *submap, octomap::ColorOcTree *new_tree)
     {
         // 这个接下去有一大段。不想看了，反正就是得到子图的一个位姿
         Eigen::Vector3d _T_w_i_b;
@@ -114,10 +128,10 @@ namespace dre_slam
         transformTree(submap->sub_octree_, Twc, new_tree);
     } // insertSubMap2NewTree
 
-    void OctoMapFusion::transformTree(octomap::OcTree *src_tree, Sophus::SE3 &Twc, octomap::OcTree *dst_tree)
+    void OctoMapFusion::transformTree(octomap::ColorOcTree *src_tree, Sophus::SE3 &Twc, octomap::ColorOcTree *dst_tree)
     {
         // 这一步遍历了子图里面的每个体素，并且将他们都做了变换
-        for (octomap::OcTree::leaf_iterator it = src_tree->begin_leafs(); it != src_tree->end_leafs(); ++it)
+        for (octomap::ColorOcTree::leaf_iterator it = src_tree->begin_leafs(); it != src_tree->end_leafs(); ++it)
         {
             // src.   获取到每个体素的坐标
             Eigen::Vector3d pt_src(it.getX(), it.getY(), it.getZ());

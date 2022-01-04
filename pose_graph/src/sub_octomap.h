@@ -18,6 +18,7 @@
 #define SUB_OCTOMAP_H
 
 #include <octomap/octomap.h>
+#include <octomap/ColorOcTree.h>
 #include <sophus/se3.h>
 #include "keyframe.h"
 #include "config.h"
@@ -37,7 +38,7 @@ public:
 	
 	// main contant.
 	Config* cfg_;
-	octomap::OcTree* sub_octree_;
+	octomap::ColorOcTree* sub_octree_;
 	std::set<KeyFrame*> kfs_;
 	KeyFrame* kf_base_;
 };// class SubOctomap

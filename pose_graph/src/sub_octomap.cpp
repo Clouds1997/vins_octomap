@@ -22,7 +22,7 @@ namespace dre_slam
 
 SubOctomap::SubOctomap ( Config* cfg) :cfg_ ( cfg )
 {
-    sub_octree_ = new octomap::OcTree ( cfg->oc_voxel_size_ );
+    sub_octree_ = new octomap::ColorOcTree ( cfg->oc_voxel_size_ );
     sub_octree_->setOccupancyThres ( cfg->oc_occ_th_ );
     sub_octree_->setProbHit ( cfg->oc_prob_hit_ );
     sub_octree_->setProbMiss ( cfg->oc_prob_miss_ );

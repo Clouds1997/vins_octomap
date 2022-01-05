@@ -57,7 +57,7 @@ void SubOctoMapConstruction::processing()
 			octomap_fusion_->insertOneScan2FullMapAndPub ( kf, point_cloud_c);
              
 			// // Insert one scan to cur sub map.  就是将这一帧的点云转到base（第一帧点云）之下 就是差不多创建一个局部的小地图 
-            cur_sub_map_->insertKeyFrame ( kf, point_cloud_c );
+            // cur_sub_map_->insertKeyFrame ( kf, point_cloud_c );
 
             // // Check if need to construct new submap.  如果当前子图的关键帧数量已经达到阈值，则创建新的子图
             ++ nkf_passed_;

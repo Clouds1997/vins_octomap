@@ -1,13 +1,13 @@
-// This file is part of dre_slam - Dynamic RGB-D Encoder SLAM for Differential-Drive Robot.
+// This file is part of rio_slam - Dynamic RGB-D Encoder SLAM for Differential-Drive Robot.
 //
 // Copyright (C) 2019 Dongsheng Yang <ydsf16@buaa.edu.cn>
 // (Biologically Inspired Mobile Robot Laboratory, Robotics Institute, Beihang University)
 //
-// dre_slam is free software: you can redistribute it and/or modify it under the
+// rio_slam is free software: you can redistribute it and/or modify it under the
 // terms of the GNU General Public License as published by the Free Software
 // Foundation, either version 3 of the License, or any later version.
 //
-// dre_slam is distributed in the hope that it will be useful, but WITHOUT ANY
+// rio_slam is distributed in the hope that it will be useful, but WITHOUT ANY
 // WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 // FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 //
@@ -20,11 +20,11 @@
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 
-namespace dre_slam
+namespace rio_slam
 {
 
 // 这个节点是创建子图的节点
-SubOctoMapConstruction::SubOctoMapConstruction ( OctoMapFusion* octomap_fusion,  Config* cfg ) : octomap_fusion_ ( octomap_fusion ), cfg_ ( cfg )
+SubOctoMapConstruction::SubOctoMapConstruction ( RosPuber *ros_puber, OctoMapFusion* octomap_fusion,  Config* cfg ) : ros_puber_(ros_puber), octomap_fusion_ ( octomap_fusion ), cfg_ ( cfg )
 {
     sub_octomap_construction_thread_ = new std::thread ( &SubOctoMapConstruction::processing, this );
     nkf_passed_ = 0;
@@ -45,7 +45,7 @@ void SubOctoMapConstruction::processing()
 			
             // construct sub map.
             if ( nkf_passed_ == 0 ) {
-                cur_sub_map_ = new SubOctomap ( cfg_ );
+                cur_sub_map_ = new SubOctomap (ros_puber_,  cfg_ );
             }
 
             // Construct 3D point cloud in the camera frame.
@@ -108,4 +108,4 @@ void SubOctoMapConstruction::createPointCloud (KeyFrame* cur_kf, octomap::Pointc
 
 } // createPointCloud
 
-} // namespace dre_slam
+} // namespace rio_slam

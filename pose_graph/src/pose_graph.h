@@ -53,7 +53,7 @@ class PoseGraph
 public:
 	PoseGraph();
 	~PoseGraph();
-	void registerPub(ros::NodeHandle &n, dre_slam::Config *cfg);
+	void registerPub(ros::NodeHandle &n, rio_slam::Config *cfg);
 	void addKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop);
 	void loadKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop);
 	void loadVocabulary(std::string voc_path);
@@ -69,6 +69,7 @@ public:
 	void savePoseGraph();
 	void loadPoseGraph();
 	void publish();
+	void saveOctomap(const string& dir);
 	Vector3d t_drift;
 	double yaw_drift;
 	Matrix3d r_drift;
@@ -86,7 +87,7 @@ private:
 	void addKeyFrameIntoVoc(KeyFrame* keyframe);
 	void optimize4DoF();
 	void updatePath();
-	dre_slam::Config* cfg_;
+	rio_slam::Config* cfg_;
 	list<KeyFrame*> keyframelist;
 	std::mutex m_keyframelist;
 	std::mutex m_optimize_buf;
@@ -115,9 +116,9 @@ private:
 	ros::Publisher pub_octree;
 
 
-	dre_slam::SubOctoMapConstruction* sub_octomap_construction_;
-	dre_slam::OctoMapFusion* octomap_fusion_;
-	dre_slam::RosPuber* ros_puber_;
+	rio_slam::SubOctoMapConstruction* sub_octomap_construction_;
+	rio_slam::OctoMapFusion* octomap_fusion_;
+	rio_slam::RosPuber* ros_puber_;
 };
 
 template <typename T>

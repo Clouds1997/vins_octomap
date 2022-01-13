@@ -1,13 +1,13 @@
-// This file is part of dre_slam - Dynamic RGB-D Encoder SLAM for Differential-Drive Robot.
+// This file is part of rio_slam - Dynamic RGB-D Encoder SLAM for Differential-Drive Robot.
 //
 // Copyright (C) 2019 Dongsheng Yang <ydsf16@buaa.edu.cn>
 // (Biologically Inspired Mobile Robot Laboratory, Robotics Institute, Beihang University)
 //
-// dre_slam is free software: you can redistribute it and/or modify it under the
+// rio_slam is free software: you can redistribute it and/or modify it under the
 // terms of the GNU General Public License as published by the Free Software
 // Foundation, either version 3 of the License, or any later version.
 //
-// dre_slam is distributed in the hope that it will be useful, but WITHOUT ANY
+// rio_slam is distributed in the hope that it will be useful, but WITHOUT ANY
 // WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 // FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 //
@@ -16,7 +16,7 @@
 
 #include "config.h"
 
-namespace dre_slam{
+namespace rio_slam{
 	
 Config::Config ( const std::string& cfg_dir)
 {
@@ -30,4 +30,4 @@ Config::Config ( const std::string& cfg_dir)
 	fs.release();
 } // Config
 
-} // namespace dre_slam
+} // namespace rio_slam

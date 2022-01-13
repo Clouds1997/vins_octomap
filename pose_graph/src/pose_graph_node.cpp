@@ -634,6 +634,7 @@ void process()
                     for ( auto &box : imageobj_msg-> boxes ){       
                         Object_t obj;
                         obj.id = box.box[6];
+                        if(obj.id != 0) continue;
                         obj.tl.x = box.box[0];
                         obj.tl.y = box.box[1];
                         obj.br.x = box.box[2];
@@ -781,12 +782,13 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "pose_graph");
     ros::NodeHandle n("~");
     std::string octomap_cfg_dir;
+    std::string results_dir;
     if ( ! n.getParam ( "octomap_cfg_dir", octomap_cfg_dir ) ) {
 		std::cout << "Read octomap_cfg_dir failure !\n";
         return -1;
     }
 	// Load system configure.
-	dre_slam::Config* cfg = new dre_slam::Config( octomap_cfg_dir );
+	rio_slam::Config* cfg = new rio_slam::Config( octomap_cfg_dir );
     posegraph.registerPub(n, cfg);
     cout <<"there is ok"<<endl;
     // read param
@@ -796,6 +798,7 @@ int main(int argc, char **argv)
     n.getParam("skip_dis", SKIP_DIS);
     std::string config_file;
     n.getParam("config_file", config_file);
+    n.getParam("results_dir", results_dir);
     cv::FileStorage fsSettings(config_file, cv::FileStorage::READ);
     if(!fsSettings.isOpened())
     {
@@ -927,6 +930,10 @@ int main(int argc, char **argv)
 
 
     ros::spin();
+
+    cout << "**********pose gragh is closed **********" << endl;
+    cout <<"try to save the map" <<endl;
+    posegraph.saveOctomap(results_dir);
 
     return 0;
 }

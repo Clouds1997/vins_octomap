@@ -5,6 +5,7 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /pose_graph1/pose_graph_path1
+        - /ColorOccupancyGrid1
       Splitter Ratio: 0.4651159942150116
     Tree Height: 788
   - Class: rviz/Selection
@@ -513,9 +514,9 @@ Visualization Manager:
       Value: false
     - Class: octomap_rviz_plugin/ColorOccupancyGrid
       Enabled: true
-      Max. Height Display: 3.4028234663852886e+38
+      Max. Height Display: 1
       Max. Octree Depth: 16
-      Min. Height Display: -3.4028234663852886e+38
+      Min. Height Display: -0.5
       Name: ColorOccupancyGrid
       Octomap Topic: /pose_graph/vins_rbgd/octomap
       Queue Size: 5
@@ -573,25 +574,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 8.523957252502441
+      Distance: 3.849071979522705
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 1.0999079942703247
-        Y: 0.7150290608406067
+        X: -0.6827800273895264
+        Y: 12.025700569152832
         Z: 6.867090633022599e-6
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.9847968816757202
+      Pitch: 0.5547969937324524
       Target Frame: <Fixed Frame>
       Value: XYOrbit (rviz)
-      Yaw: 4.788914203643799
+      Yaw: 5.745838165283203
     Saved: ~
 Window Geometry:
   Displays:

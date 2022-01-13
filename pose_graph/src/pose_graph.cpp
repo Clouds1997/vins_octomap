@@ -25,19 +25,19 @@ PoseGraph::~PoseGraph()
 	t_optimization.join();
 }
 
-void PoseGraph::registerPub(ros::NodeHandle &n, dre_slam::Config* cfg)
+void PoseGraph::registerPub(ros::NodeHandle &n, rio_slam::Config* cfg)
 {
     pub_pg_path = n.advertise<nav_msgs::Path>("pose_graph_path", 1000);
     pub_base_path = n.advertise<nav_msgs::Path>("base_path", 1000);
     pub_pose_graph = n.advertise<visualization_msgs::MarkerArray>("pose_graph", 1000);
     pub_octree = n.advertise<sensor_msgs::PointCloud2>("octree", 1000);
     // ros puber
-    ros_puber_ = new dre_slam::RosPuber ( n );
+    ros_puber_ = new rio_slam::RosPuber ( n );
     
     // octomap_fusion_  这个是进行全局地图的拼接工作
-	octomap_fusion_ = new dre_slam::OctoMapFusion( ros_puber_, cfg);
+	octomap_fusion_ = new rio_slam::OctoMapFusion( ros_puber_, cfg);
     // sub octomap  这里是创建相应的子图
-	sub_octomap_construction_ = new dre_slam::SubOctoMapConstruction(octomap_fusion_, cfg);
+	sub_octomap_construction_ = new rio_slam::SubOctoMapConstruction(ros_puber_, octomap_fusion_, cfg);
 
     for (int i = 1; i < 10; i++)
         pub_path[i] = n.advertise<nav_msgs::Path>("path_" + to_string(i), 1000);
@@ -54,6 +54,7 @@ void PoseGraph::loadNetVlad()
     netvlad = new NetVLAD();
 }
 
+// 建地图的地方
 void PoseGraph::addKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop)
 {
     //shift to base frame
@@ -1128,4 +1129,8 @@ void PoseGraph::updateKeyFrameLoop(int index, Eigen::Matrix<double, 8, 1 > &_loo
             m_drift.unlock();
         }
     }
+}
+
+void PoseGraph::saveOctomap(const string& dir){
+    octomap_fusion_->saveOctoMap(dir);
 }

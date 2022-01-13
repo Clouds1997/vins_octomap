@@ -1,13 +1,13 @@
-// This file is part of dre_slam - Dynamic RGB-D Encoder SLAM for Differential-Drive Robot.
+// This file is part of rio_slam - Dynamic RGB-D Encoder SLAM for Differential-Drive Robot.
 //
 // Copyright (C) 2019 Dongsheng Yang <ydsf16@buaa.edu.cn>
 // (Biologically Inspired Mobile Robot Laboratory, Robotics Institute, Beihang University)
 //
-// dre_slam is free software: you can redistribute it and/or modify it under the
+// rio_slam is free software: you can redistribute it and/or modify it under the
 // terms of the GNU General Public License as published by the Free Software
 // Foundation, either version 3 of the License, or any later version.
 //
-// dre_slam is distributed in the hope that it will be useful, but WITHOUT ANY
+// rio_slam is distributed in the hope that it will be useful, but WITHOUT ANY
 // WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 // FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 //
@@ -17,7 +17,7 @@
 #include "octomap_fusion.h"
 #include "sub_octomap_construction.h"
 
-namespace dre_slam
+namespace rio_slam
 {
     OctoMapFusion::OctoMapFusion(RosPuber *ros_puber, Config *cfg) : ros_puber_(ros_puber), cfg_(cfg)
     {
@@ -32,6 +32,7 @@ namespace dre_slam
         clamping_max_ = full_map_->getClampingThresMaxLog();
         clamping_min_ = full_map_->getClampingThresMinLog();
     } // OctomapMerging
+
 
     // 这个一看就是插入一个子图
     void OctoMapFusion::insertSubMap(SubOctomap *submap)
@@ -110,6 +111,7 @@ namespace dre_slam
         // 执行完成上面的步骤以后，就可以的得到一个新的在进行了回环的结果后的地图了
         std::unique_lock<mutex> lock_full(mutex_full_map_);
         delete full_map_;
+        // full_map_->clear();
         full_map_ = new_tree;
 
         // publish OctoMap.
@@ -123,7 +125,7 @@ namespace dre_slam
         // 这个接下去有一大段。不想看了，反正就是得到子图的一个位姿
         Eigen::Vector3d _T_w_i_b;
         Eigen::Matrix3d _R_w_i_b;
-        submap->kf_base_->getVioPose(_T_w_i_b, _R_w_i_b);
+        submap->kf_base_->getPose(_T_w_i_b, _R_w_i_b);
         Sophus::SE3 Twc(_R_w_i_b, _T_w_i_b);
         transformTree(submap->sub_octree_, Twc, new_tree);
     } // insertSubMap2NewTree
@@ -209,7 +211,69 @@ namespace dre_slam
     void OctoMapFusion::saveOctoMap(const string &dir)
     {
         std::unique_lock<mutex> lock_full(mutex_full_map_);
-        full_map_->writeBinary(dir);
+        //先进行一个滤波
+        pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+        for (octomap::ColorOcTree::leaf_iterator it = full_map_->begin(); it != full_map_->end(); ++it)
+        {
+            if(full_map_->isNodeOccupied(*it))
+            {   
+                pcl::PointXYZRGB points_rgb;
+                octomap::point3d points = it.getCoordinate();
+                octomap::ColorOcTreeNode::Color color = it->getColor();
+                points_rgb.x = points.x();
+                points_rgb.y = points.y();
+                points_rgb.z = points.z();
+                points_rgb.r = color.r;
+                points_rgb.g = color.g;
+                points_rgb.b = color.b;
+                cloud->push_back(points_rgb);
+            }
+        }
+        std::cout << "原始点云数据点数：" << cloud->points.size()<< std::endl << std::endl;
+        /*方法：半径滤波器滤波*/
+        pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_after_Radius(new pcl::PointCloud<pcl::PointXYZRGB>);
+
+        pcl::RadiusOutlierRemoval<pcl::PointXYZRGB> radiusoutlier;  //创建滤波器
+        
+        radiusoutlier.setInputCloud(cloud);    //设置输入点云
+        radiusoutlier.setRadiusSearch(0.1);     //设置半径为100的范围内找临近点
+        radiusoutlier.setMinNeighborsInRadius(3); //设置查询点的邻域点集数小于2的删除
+                                        
+        radiusoutlier.filter(*cloud_after_Radius);
+
+        std::cout << "半径滤波后点云数据点数：" << cloud_after_Radius->points.size() << std::endl;
+
+        //重新构建八叉树地图
+        octomap::ColorOcTree* new_map_;
+        new_map_ = new octomap::ColorOcTree(cfg_->oc_voxel_size_);
+        new_map_->setOccupancyThres(cfg_->oc_occ_th_);
+        new_map_->setProbHit(cfg_->oc_prob_hit_);
+        new_map_->setProbMiss(cfg_->oc_prob_miss_);
+        for ( int i = 0; i < cloud_after_Radius->points.size(); ++ i ) {
+            // cout << cloud_after_Radius->points[i].x << "  " << (int)cloud_after_Radius->points[i].r << "  ";
+            new_map_->updateNode(octomap::point3d(cloud_after_Radius->points[i].x, cloud_after_Radius->points[i].y, cloud_after_Radius->points[i].z ), true);
+            new_map_->setNodeColor(cloud_after_Radius->points[i].x, cloud_after_Radius->points[i].y, cloud_after_Radius->points[i].z ,
+                                                                    (int)cloud_after_Radius->points[i].r, (int)cloud_after_Radius->points[i].g, (int)cloud_after_Radius->points[i].b);
+        }
+        new_map_->updateInnerOccupancy();
+
+        cout << "there is"<<dir <<endl;
+        pcl::PCDWriter writer;
+        writer.write(dir + "/octomap.pcd",*cloud_after_Radius);
+        // pcl::PCDWriter writer;
+	    // writer.write(dir + " /octomap.pcd",*cloud);
+
+        // string pcd_name =  dir + "/octomap.pcd";
+        bool ret = full_map_->write(dir  + "/octomap.ot");
+        if(! ret){
+            cout << "Error octomap writing" <<endl;
+        }
+
+        bool ret1 = new_map_->write(dir  + "/octomap_filter.ot");
+        if(! ret1){
+            cout << "Error octomap_filter writing" <<endl;
+        }
     } // saveOctoMap
+
 
 }

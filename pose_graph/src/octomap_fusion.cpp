@@ -16,6 +16,7 @@
 
 #include "octomap_fusion.h"
 #include "sub_octomap_construction.h"
+#include <ctime>
 
 namespace rio_slam
 {
@@ -44,6 +45,68 @@ namespace rio_slam
         submaps_.push_back(submap);
     } // insertSubMap
 
+    void OctoMapFusion::insertOneScanF2FullMapAndPub(KeyFrame *kf, octomap::Pointcloud &point_cloud_c)
+    {
+        Eigen::Vector3d P = kf->P;
+        Eigen::Matrix3d R = kf->R;
+        pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+        // Convert point cloud to world coordinate.
+        octomap::Pointcloud point_cloud_w;
+        // 这里是相机和世界坐标之间的转换
+        for (size_t i = 0; i < point_cloud_c.size(); i++)
+        {
+            pcl::PointXYZRGB points_rgb;
+            octomap::point3d &pt = point_cloud_c[i];
+            Eigen::Vector3d ptc(pt.x(), pt.y(), pt.z());
+            Eigen::Vector3d w_pts_i = R * (qi_d * ptc + ti_d) + P;
+            // Delete error points.
+            if (w_pts_i[2] > 6.0 || w_pts_i[2] < -2.0)
+                continue;
+
+            unsigned int B = kf->point_3d_color[i].x;
+            unsigned int G = kf->point_3d_color[i].y;
+            unsigned int R = kf->point_3d_color[i].z;
+
+            points_rgb.x = w_pts_i[0];
+            points_rgb.y = w_pts_i[1];
+            points_rgb.z = w_pts_i[2];
+            points_rgb.r =  R;
+            points_rgb.g = G;
+            points_rgb.b = B;
+            // if(points_rgb.z > 3) continue;
+            cloud->push_back(points_rgb);
+        }
+
+        /*方法：半径滤波器滤波*/
+        pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_after_Radius(new pcl::PointCloud<pcl::PointXYZRGB>);
+        pcl::RadiusOutlierRemoval<pcl::PointXYZRGB> radiusoutlier;  //创建滤波器
+        
+        radiusoutlier.setInputCloud(cloud);    //设置输入点云
+        radiusoutlier.setRadiusSearch(cfg_->RadiusSearch);     //设置半径为100的范围内找临近点
+        radiusoutlier.setMinNeighborsInRadius(cfg_->MinNeighborsInRadius); //设置查询点的邻域点集数小于2的删除
+                                        
+        radiusoutlier.filter(*cloud_after_Radius);
+
+        std::cout << "半径滤波后点云数据减少点数：" << cloud->points.size() - cloud_after_Radius->points.size() << std::endl;
+
+        // 将滤波后的点云转换成为八叉树
+        for ( int i = 0; i < cloud_after_Radius->points.size(); ++ i ) {
+            // cout << cloud_after_Radius->points[i].x << "  " << (int)cloud_after_Radius->points[i].r << "  ";
+            full_map_->updateNode(octomap::point3d(cloud_after_Radius->points[i].x, cloud_after_Radius->points[i].y, cloud_after_Radius->points[i].z ), true);
+            full_map_->setNodeColor(cloud_after_Radius->points[i].x, cloud_after_Radius->points[i].y, cloud_after_Radius->points[i].z ,
+                                                                    (int)cloud_after_Radius->points[i].r, (int)cloud_after_Radius->points[i].g, (int)cloud_after_Radius->points[i].b);
+        }
+
+
+        std::unique_lock<mutex> lock(mutex_full_map_);
+        // update the map.
+        // full_map_->insertPointCloud(point_cloud_w, octomap::point3d(0, 0, 0), -1, true, true);
+        full_map_->updateInnerOccupancy();
+
+        // publish OctoMap.
+        ros_puber_->pubOctoMap(full_map_);
+    } // insertOneScan2FullMap
+
     void OctoMapFusion::insertOneScan2FullMapAndPub(KeyFrame *kf, octomap::Pointcloud &point_cloud_c)
     {
         Eigen::Vector3d P = kf->P;
@@ -53,6 +116,7 @@ namespace rio_slam
         // 这里是相机和世界坐标之间的转换
         for (size_t i = 0; i < point_cloud_c.size(); i++)
         {
+            pcl::PointXYZRGB points_rgb;
             octomap::point3d &pt = point_cloud_c[i];
             Eigen::Vector3d ptc(pt.x(), pt.y(), pt.z());
             Eigen::Vector3d w_pts_i = R * (qi_d * ptc + ti_d) + P;
@@ -85,6 +149,7 @@ namespace rio_slam
         // publish OctoMap.
         ros_puber_->pubOctoMap(full_map_);
     } // insertOneScan2FullMap
+
 
     void OctoMapFusion::fusionAndPub()
     {
@@ -132,6 +197,7 @@ namespace rio_slam
 
     void OctoMapFusion::transformTree(octomap::ColorOcTree *src_tree, Sophus::SE3 &Twc, octomap::ColorOcTree *dst_tree)
     {
+
         // 这一步遍历了子图里面的每个体素，并且将他们都做了变换
         for (octomap::ColorOcTree::leaf_iterator it = src_tree->begin_leafs(); it != src_tree->end_leafs(); ++it)
         {
@@ -205,15 +271,41 @@ namespace rio_slam
     void OctoMapFusion::setLoopFlag()
     {
         std::unique_lock<mutex> lock(mutex_loop_flag_);
-        loop_flag_ = true;
+        if(cfg_->loop_flag)
+            loop_flag_ = true;
     }
 
     void OctoMapFusion::saveOctoMap(const string &dir)
     {
+        // srandom(time(NULL));
         std::unique_lock<mutex> lock_full(mutex_full_map_);
         //先进行一个滤波
         pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
-        for (octomap::ColorOcTree::leaf_iterator it = full_map_->begin(); it != full_map_->end(); ++it)
+
+        // 进行八叉树的扩展
+        unsigned int maxDepth = full_map_->getTreeDepth();
+        cout << "tree depth is " << maxDepth << endl;
+
+        // expand collapsed occupied nodes until all occupied leaves are at maximum depth
+        vector<octomap::ColorOcTreeNode*> collapsed_occ_nodes;
+        do {
+        collapsed_occ_nodes.clear();
+        for (octomap::ColorOcTree::iterator it = full_map_->begin(); it != full_map_->end(); ++it)
+        {
+            if(full_map_->isNodeOccupied(*it) && it.getDepth() < maxDepth)
+            {
+            collapsed_occ_nodes.push_back(&(*it));
+            }
+        }
+        for (vector<octomap::ColorOcTreeNode*>::iterator it = collapsed_occ_nodes.begin(); it != collapsed_occ_nodes.end(); ++it)
+        {
+            full_map_->expandNode(*it);
+        }
+        cout << "expanded " << collapsed_occ_nodes.size() << " nodes" << endl;
+        } while(collapsed_occ_nodes.size() > 0);
+
+
+        for (octomap::ColorOcTree::iterator it = full_map_->begin(); it != full_map_->end(); ++it)
         {
             if(full_map_->isNodeOccupied(*it))
             {   
@@ -226,22 +318,24 @@ namespace rio_slam
                 points_rgb.r = color.r;
                 points_rgb.g = color.g;
                 points_rgb.b = color.b;
+                // if(points_rgb.z > 3) continue;
                 cloud->push_back(points_rgb);
             }
         }
         std::cout << "原始点云数据点数：" << cloud->points.size()<< std::endl << std::endl;
         /*方法：半径滤波器滤波*/
         pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_after_Radius(new pcl::PointCloud<pcl::PointXYZRGB>);
+        cloud_after_Radius = cloud;
 
-        pcl::RadiusOutlierRemoval<pcl::PointXYZRGB> radiusoutlier;  //创建滤波器
+        // pcl::RadiusOutlierRemoval<pcl::PointXYZRGB> radiusoutlier;  //创建滤波器
         
-        radiusoutlier.setInputCloud(cloud);    //设置输入点云
-        radiusoutlier.setRadiusSearch(0.1);     //设置半径为100的范围内找临近点
-        radiusoutlier.setMinNeighborsInRadius(3); //设置查询点的邻域点集数小于2的删除
+        // radiusoutlier.setInputCloud(cloud);    //设置输入点云
+        // radiusoutlier.setRadiusSearch(cfg_->RadiusSearch);     //设置半径为100的范围内找临近点
+        // radiusoutlier.setMinNeighborsInRadius(cfg_->MinNeighborsInRadius); //设置查询点的邻域点集数小于2的删除
                                         
-        radiusoutlier.filter(*cloud_after_Radius);
+        // radiusoutlier.filter(*cloud_after_Radius);
 
-        std::cout << "半径滤波后点云数据点数：" << cloud_after_Radius->points.size() << std::endl;
+        // std::cout << "半径滤波后点云数据点数：" << cloud_after_Radius->points.size() << std::endl;
 
         //重新构建八叉树地图
         octomap::ColorOcTree* new_map_;
@@ -257,19 +351,39 @@ namespace rio_slam
         }
         new_map_->updateInnerOccupancy();
 
+        // int rd = random() %20 + 1;
+        time_t now = time(0);
+        tm *ltm = localtime(&now);
+        string loop;
+        string dy;
+        if(cfg_->loop_flag){
+            loop = "loop";
+        }else{
+            loop = "nloop";
+        }
+
+        if(cfg_->dy_delet_close){
+            dy = "ndy";
+        }else{
+            dy = "dy";
+        }
+
+        string name = to_string(ltm->tm_mon +1) +"_" + to_string(ltm->tm_mday)+"_"+ to_string(ltm->tm_hour +8)
+                                +"_"+to_string(ltm->tm_min)+"_"+loop+"_"+dy;
+
         cout << "there is"<<dir <<endl;
         pcl::PCDWriter writer;
-        writer.write(dir + "/octomap.pcd",*cloud_after_Radius);
+        writer.write(dir + "/octomap"+name+".pcd",*cloud_after_Radius);
         // pcl::PCDWriter writer;
 	    // writer.write(dir + " /octomap.pcd",*cloud);
 
         // string pcd_name =  dir + "/octomap.pcd";
-        bool ret = full_map_->write(dir  + "/octomap.ot");
+        bool ret = full_map_->write(dir  + "/octomap"+name+".ot");
         if(! ret){
             cout << "Error octomap writing" <<endl;
         }
 
-        bool ret1 = new_map_->write(dir  + "/octomap_filter.ot");
+        bool ret1 = new_map_->write(dir  + "/octomap_filter"+name+".ot");
         if(! ret1){
             cout << "Error octomap_filter writing" <<endl;
         }

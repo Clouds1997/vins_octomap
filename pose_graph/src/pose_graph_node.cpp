@@ -75,6 +75,8 @@ camodocal::CameraPtr m_camera;
 Eigen::Vector3d tic;
 Eigen::Matrix3d qic;
 
+rio_slam::Config* cfg;
+
 Eigen::Matrix<double, 3, 1> ti_d;
 Eigen::Matrix<double, 3, 3> qi_d;
 
@@ -668,9 +670,9 @@ void process()
 						//depth is aligned
                         m_camera->liftProjective(a, b);
                         float depth_val = ((float)depth.at<unsigned short>(j, i)) / 1000.0;
-                        //  && mask.at<uchar>(i,j) == 0 去除锚框中的点   && static_cast<int>(mask.ptr<uchar>(j)[i]) == 0
+                        //  && mask.at<uchar>(i,j) == 0 去除锚框中的点   && static_cast<int>(mask.ptr<uchar>(j)[i]) == 0   && (int)(mask.at<unsigned char>(j,i)) == 0
                         // cout << mask.size() << endl;
-                        if (depth_val > PCL_MIN_DIST && depth_val < PCL_MAX_DIST&& (int)(mask.at<unsigned char>(j,i)) == 0)
+                        if (depth_val > PCL_MIN_DIST && depth_val < PCL_MAX_DIST  && (cfg->dy_delet_close || (int)(mask.at<unsigned char>(j,i)) == 0))
                         {
                             //debug: ++count_;
 
@@ -788,7 +790,7 @@ int main(int argc, char **argv)
         return -1;
     }
 	// Load system configure.
-	rio_slam::Config* cfg = new rio_slam::Config( octomap_cfg_dir );
+	cfg = new rio_slam::Config( octomap_cfg_dir );
     posegraph.registerPub(n, cfg);
     cout <<"there is ok"<<endl;
     // read param

@@ -514,7 +514,7 @@ Visualization Manager:
       Value: false
     - Class: octomap_rviz_plugin/ColorOccupancyGrid
       Enabled: true
-      Max. Height Display: 1
+      Max. Height Display: 20
       Max. Octree Depth: 16
       Min. Height Display: -0.5
       Name: ColorOccupancyGrid
@@ -574,7 +574,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 3.849071979522705
+      Distance: 16.795398712158203
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -589,10 +589,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.5547969937324524
+      Pitch: 0.1447972059249878
       Target Frame: <Fixed Frame>
       Value: XYOrbit (rviz)
-      Yaw: 5.745838165283203
+      Yaw: 5.750837802886963
     Saved: ~
 Window Geometry:
   Displays:

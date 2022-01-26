@@ -26,6 +26,18 @@ Config::Config ( const std::string& cfg_dir)
 	/**** OctoMap Construction ****/
 	fs["oc_voxel_size_"] >> oc_voxel_size_;   // Voxel size of the OctoMap (m).
 	fs["oc_submap_size_"] >> oc_submap_size_; // Sub-OctoMap size (KFs)
+
+	fs["RadiusSearch"] >> RadiusSearch;   // Voxel size of the OctoMap (m).
+	fs["MinNeighborsInRadius"] >> MinNeighborsInRadius; // Sub-OctoMap size (KFs)
+
+	fs["maxhight"] >> maxhight;
+
+	fs["loop_flag"] >> loop_flag;
+
+	fs["dy_delet_close"] >> dy_delet_close;
+
+	fs["openfilt"]>>openfilt;
+
 	
 	fs.release();
 } // Config

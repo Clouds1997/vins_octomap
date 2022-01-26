@@ -109,6 +109,15 @@ public:
 	double oc_voxel_size_; 	// Voxel size of the OctoMap (m).
 	double oc_submap_size_; // Sub-OctoMap size (KFs)
 
+	double RadiusSearch;
+	double MinNeighborsInRadius;
+
+	double maxhight;
+
+	bool loop_flag;
+	bool dy_delet_close;
+	bool openfilt;
+
 	/** OctoMap parameters **/
 	double oc_occ_th_ = 0.61;
 	double oc_prob_hit_= 0.6;

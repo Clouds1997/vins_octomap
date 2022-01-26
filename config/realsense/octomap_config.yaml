@@ -6,4 +6,17 @@
 oc_voxel_size_: 0.04  # Voxel size of the OctoMap (m).
 oc_submap_size_: 5    # Sub-OctoMap size (KFs)
 
+maxhight: 3.5  #lab
+
+loop_flag: 1
+
+dy_delet_close: 0
+
+openfilt: 1
+
+RadiusSearch: 0.1
+MinNeighborsInRadius: 4
+
+
+
 

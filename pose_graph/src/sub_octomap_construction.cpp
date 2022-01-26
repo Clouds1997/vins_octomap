@@ -54,7 +54,11 @@ void SubOctoMapConstruction::processing()
 			createPointCloud( kf, point_cloud_c );
 
 			// Insert one scan to full map.   这里是将相机坐标下面的点云转换到世界坐标系下面
-			octomap_fusion_->insertOneScan2FullMapAndPub ( kf, point_cloud_c);
+            if(cfg_->openfilt){
+                octomap_fusion_->insertOneScanF2FullMapAndPub ( kf, point_cloud_c);
+            }else{
+			    octomap_fusion_->insertOneScan2FullMapAndPub ( kf, point_cloud_c);
+            }
              
 			// // Insert one scan to cur sub map.  就是将这一帧的点云转到base（第一帧点云）之下 就是差不多创建一个局部的小地图 
             cur_sub_map_->insertKeyFrame ( kf, point_cloud_c );
@@ -103,6 +107,7 @@ void SubOctoMapConstruction::createPointCloud (KeyFrame* cur_kf, octomap::Pointc
     for (unsigned int i = 0; i < cur_kf->point_3d_depth.size(); i++)
     {
         cv::Point3f pcl = cur_kf->point_3d_depth[i];
+        if(pcl.z > cfg_->maxhight) continue;
         point_cloud.push_back(pcl.x , pcl.y, pcl.z);
     }
 

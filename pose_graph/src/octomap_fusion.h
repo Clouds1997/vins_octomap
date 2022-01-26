@@ -43,6 +43,7 @@ public:
 	// ~OctoMapFusion();
 	void insertSubMap( SubOctomap* submap );
 	void insertOneScan2FullMapAndPub ( KeyFrame* kf, octomap::Pointcloud& point_cloud_c);
+	void insertOneScanF2FullMapAndPub(KeyFrame *kf, octomap::Pointcloud &point_cloud_c);
 	void fusionAndPub();  
 	void insertSubMap2NewTree(SubOctomap* submap, octomap::ColorOcTree* new_tree);
 	void processing();
